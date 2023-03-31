@@ -1,0 +1,5 @@
+package camera
+
+struct Camera {
+	
+}
