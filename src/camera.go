@@ -1,5 +1,0 @@
-package camera
-
-struct Camera {
-	
-}
