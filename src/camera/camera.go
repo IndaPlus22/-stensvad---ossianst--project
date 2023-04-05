@@ -1,7 +1,7 @@
 package camera
 
 import (
-	"fmt"
+	"math"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.2/glfw"
@@ -9,41 +9,39 @@ import (
 )
 
 type Camera struct {
-	Position    mgl32.Vec3
-	Orientation mgl32.Vec3
-	Up          mgl32.Vec3
+	position    mgl32.Vec3
+	orientation mgl32.Vec3
+	up          mgl32.Vec3
 
 	firstClick bool
 
 	width  int
 	height int
 
-	speed       float32
-	sensitivity float32
+	speed float32
 
-	savedMouseX     float64
-	savedMouseY     float64
+	sensitivity     float64
+	yaw             float64
+	pitch           float64
 	lastFrameMouseX float64
 	lastFrameMouseY float64
 }
 
 // Constructor
 func NewCamera(width int, height int, position mgl32.Vec3) Camera {
-	c := Camera{position, mgl32.Vec3{0.0, 0.0, -1.0}, mgl32.Vec3{0.0, 1.0, 0.0}, true, width, height, 0.1, 30, 0, 0, 0, 0}
+	c := Camera{position, mgl32.Vec3{0.0, 0.0, -1.0}, mgl32.Vec3{0.0, 1.0, 0.0}, true, width, height, 0.1, 0.1, -90, 0, 0, 0}
 
 	return c
 }
 
-// Tell the cameara ho
+// Tell the cameara to do the nessesary calulations and send the reult to the shaders
 func (c *Camera) Matrix(FOVdeg float32, nearPlane float32, farPlane float32, shader *uint32, uniform string) {
-	view := mgl32.Ident4()
-	projection := mgl32.Ident4()
 	center := mgl32.Vec3{}
-	center = center.Add(c.Position)
-	center = center.Add(c.Orientation)
+	center = center.Add(c.position)
+	center = center.Add(c.orientation)
 
-	view = mgl32.LookAtV(c.Position, center, c.Up)
-	projection = mgl32.Perspective(mgl32.DegToRad(FOVdeg), float32(c.width/c.height), nearPlane, farPlane)
+	view := mgl32.LookAtV(c.position, center, c.up)
+	projection := mgl32.Perspective(mgl32.DegToRad(FOVdeg), float32(c.width/c.height), nearPlane, farPlane)
 
 	projview := projection
 	projview = projview.Mul4(view)
@@ -51,33 +49,35 @@ func (c *Camera) Matrix(FOVdeg float32, nearPlane float32, farPlane float32, sha
 	gl.UniformMatrix4fv(gl.GetUniformLocation(*shader, gl.Str(uniform)), 1, false, &projview[0])
 }
 
+// Takes inputs from the user allowing them to controll the camera
 func (c *Camera) Inputs(window *glfw.Window) {
 
+	//Positioning of the camera
 	if window.GetKey(glfw.KeyW) == glfw.Press {
-		temp := c.Orientation
-		c.Position = c.Position.Add(temp.Mul(c.speed))
+		temp := c.orientation
+		c.position = c.position.Add(temp.Mul(c.speed))
 	}
 	if window.GetKey(glfw.KeyA) == glfw.Press {
-		temp := c.Orientation
-		temp = temp.Cross(c.Up).Normalize()
-		c.Position = c.Position.Add(temp.Mul(c.speed * -1))
+		temp := c.orientation
+		temp = temp.Cross(c.up).Normalize()
+		c.position = c.position.Add(temp.Mul(c.speed * -1))
 	}
 	if window.GetKey(glfw.KeyS) == glfw.Press {
-		temp := c.Orientation
-		c.Position = c.Position.Add(temp.Mul(c.speed * -1))
+		temp := c.orientation
+		c.position = c.position.Add(temp.Mul(c.speed * -1))
 	}
 	if window.GetKey(glfw.KeyD) == glfw.Press {
-		temp := c.Orientation
-		temp = temp.Cross(c.Up).Normalize()
-		c.Position = c.Position.Add(temp.Mul(c.speed))
+		temp := c.orientation
+		temp = temp.Cross(c.up).Normalize()
+		c.position = c.position.Add(temp.Mul(c.speed))
 	}
 	if window.GetKey(glfw.KeySpace) == glfw.Press {
-		temp := c.Up
-		c.Position = c.Position.Add(temp.Mul(c.speed))
+		temp := c.up
+		c.position = c.position.Add(temp.Mul(c.speed))
 	}
 	if window.GetKey(glfw.KeyLeftControl) == glfw.Press {
-		temp := c.Up
-		c.Position = c.Position.Add(temp.Mul(c.speed * -1))
+		temp := c.up
+		c.position = c.position.Add(temp.Mul(c.speed * -1))
 	}
 	if window.GetKey(glfw.KeyLeftShift) == glfw.Press {
 		c.speed = 0.4
@@ -85,40 +85,46 @@ func (c *Camera) Inputs(window *glfw.Window) {
 		c.speed = 0.1
 	}
 
+	//Makes it possible to control what direction the camera is looking
 	if window.GetMouseButton(glfw.MouseButtonLeft) == glfw.Press {
-		window.SetInputMode(glfw.CursorMode, glfw.CursorHidden)
+		window.SetInputMode(glfw.CursorMode, glfw.CursorDisabled)
+
+		mouseX, mouseY := window.GetCursorPos()
 
 		//Make the camera not jump when starting to look around
 		if c.firstClick {
-			mouseX, mouseY := window.GetCursorPos()
-			c.savedMouseX = mouseX
-			c.savedMouseY = mouseY
 			c.lastFrameMouseX = mouseX
 			c.lastFrameMouseY = mouseY
 			c.firstClick = false
 		}
 
-		mouseX, mouseY := window.GetCursorPos()
-
-		fmt.Println(mouseX, mouseY)
-
-		rotX := c.sensitivity * float32((mouseY-c.lastFrameMouseY)/float64(c.height))
-		rotY := c.sensitivity * float32((mouseX-c.lastFrameMouseX)/float64(c.height))
-
-		rotationMatrix := mgl32.HomogRotate3D(mgl32.DegToRad(-rotX), c.Orientation.Cross(c.Up).Normalize())
-		newOrientation := rotationMatrix.Mul4x1(mgl32.Vec4{c.Orientation.X(), c.Orientation.Y(), c.Orientation.Z(), 1})
-
-		c.Orientation = mgl32.Vec3{c.Orientation.X(), newOrientation.Y(), -1}
-
-		rotationMatrix = mgl32.HomogRotate3D(mgl32.DegToRad(-rotY), c.Up)
-		newOrientation = rotationMatrix.Mul4x1(mgl32.Vec4{c.Orientation.X(), c.Orientation.Y(), c.Orientation.Z(), 1})
-		c.Orientation = mgl32.Vec3{newOrientation.X(), c.Orientation.Y(), -1}
-
-		//Update new last frames
+		xOffset := mouseX - c.lastFrameMouseX
+		yOffset := mouseY - c.lastFrameMouseY
 		c.lastFrameMouseX = mouseX
 		c.lastFrameMouseY = mouseY
+
+		xOffset *= c.sensitivity
+		yOffset *= c.sensitivity
+
+		c.yaw += xOffset
+		c.pitch += yOffset
+
+		//Stops the user from being able to rotate fullt upwards and downwards
+		if c.pitch > 89 {
+			c.pitch = 89
+		} else if c.pitch < -89 {
+			c.pitch = -89
+		}
+
+		//Calculate the new orientation of the camera
+		frontX := float32(math.Cos(float64(mgl32.DegToRad(float32(c.yaw)))) * math.Cos(float64(mgl32.DegToRad(float32(c.pitch)))))
+		frontY := float32(math.Sin(float64(mgl32.DegToRad(float32(-c.pitch)))))
+		frontZ := float32(math.Sin(float64(mgl32.DegToRad(float32(c.yaw)))) * math.Cos(float64(mgl32.DegToRad(float32(c.pitch)))))
+		front := mgl32.Vec3{frontX, frontY, frontZ}
+
+		c.orientation = front.Normalize()
+
 	} else if window.GetMouseButton(glfw.MouseButtonLeft) == glfw.Release && c.firstClick == false {
-		window.SetCursorPos(c.savedMouseX, c.savedMouseY)
 		window.SetInputMode(glfw.CursorMode, glfw.CursorNormal)
 		c.firstClick = true
 	}
