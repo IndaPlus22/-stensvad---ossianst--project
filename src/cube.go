@@ -5,6 +5,7 @@ import (
 	_ "image/png"
 	"log"
 	"runtime"
+	"stensvad-ossianst-melvinbe-project/src/camera"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
@@ -13,6 +14,8 @@ import (
 
 const windowWidth = 800
 const windowHeight = 600
+
+var cam = camera.NewCamera(windowWidth, windowHeight, mgl32.Vec3{0.0, 0.0, 2.0})
 
 func init() {
 	// GLFW event handling must run on the main OS thread
@@ -47,7 +50,7 @@ func main() {
 	// Configure global settings
 	gl.Enable(gl.DEPTH_TEST)
 	gl.DepthFunc(gl.LESS)
-	gl.ClearColor(0.0, 0.0, 0.0, 1.0)
+	gl.ClearColor(0.34, 0.32, 0.45, 1.0)
 
 	var cubeVertices = []float32{
 		// Positions     UVs          Normals
@@ -94,6 +97,7 @@ func main() {
 	cube := NewSprite(cubeVertices, cubeIndices, "square.png", "simple.shader")
 
 	previousTime := glfw.GetTime()
+
 	for !window.ShouldClose() {
 		// Calculate deltatime
 		time := glfw.GetTime()
@@ -101,6 +105,8 @@ func main() {
 		previousTime = time
 
 		// Update:
+		cam.Inputs(window)
+
 		cube.rotation = cube.rotation.Add(mgl32.Vec3{0, float32(deltatime), 0})
 
 		// Draw:
