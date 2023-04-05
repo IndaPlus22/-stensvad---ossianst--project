@@ -29,7 +29,7 @@ func NewSprite(vertices []float32, indices []uint32, texturePath string, shaderP
 	}
 
 	s.shader.bind()
-	projection := mgl32.Perspective(mgl32.DegToRad(45.0), float32(windowWidth)/windowHeight, 0.1, 10.0)
+	projection := cam.ProjMatrix()
 	s.shader.setUniformMat4fv("projection", projection)
 	s.shader.setUniform1i("tex", 0)
 	s.shader.unbind()
@@ -55,7 +55,7 @@ func (s *Sprite) draw() {
 	model = model.Mul4(mgl32.HomogRotate3D(float32(s.rotation.Y()), mgl32.Vec3{0, 1, 0}))
 	model = model.Mul4(mgl32.HomogRotate3D(float32(s.rotation.Z()), mgl32.Vec3{0, 0, 1}))
 
-	view := mgl32.LookAtV(mgl32.Vec3{3, 3, 3}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
+	view := cam.ViewMatrix()
 
 	s.shader.bind()
 

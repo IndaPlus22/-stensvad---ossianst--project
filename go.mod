@@ -1,4 +1,4 @@
-module src
+module stensvad-ossianst-melvinbe-project
 
 go 1.20
 

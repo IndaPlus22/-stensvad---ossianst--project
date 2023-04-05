@@ -3,8 +3,7 @@ package camera
 import (
 	"math"
 
-	"github.com/go-gl/gl/v4.1-core/gl"
-	"github.com/go-gl/glfw/v3.2/glfw"
+	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 )
 
@@ -18,7 +17,10 @@ type Camera struct {
 	width  int
 	height int
 
-	speed float32
+	speed     float32
+	fovDEG    float32
+	nearPlane float32
+	farPlane  float32
 
 	sensitivity     float64
 	yaw             float64
@@ -29,24 +31,24 @@ type Camera struct {
 
 // Constructor
 func NewCamera(width int, height int, position mgl32.Vec3) Camera {
-	c := Camera{position, mgl32.Vec3{0.0, 0.0, -1.0}, mgl32.Vec3{0.0, 1.0, 0.0}, true, width, height, 0.1, 0.1, -90, 0, 0, 0}
+	c := Camera{position, mgl32.Vec3{0.0, 0.0, -1.0}, mgl32.Vec3{0.0, 1.0, 0.0}, true, width, height, 0.1, 45.0, 0.1, 100, 0.1, -90, 0, 0, 0}
 
 	return c
 }
 
-// Tell the cameara to do the nessesary calulations and send the reult to the shaders
-func (c *Camera) Matrix(FOVdeg float32, nearPlane float32, farPlane float32, shader *uint32, uniform string) {
-	center := mgl32.Vec3{}
-	center = center.Add(c.position)
+// Generate a new view matrix based on position and rotation
+func (c *Camera) ViewMatrix() mgl32.Mat4 {
+	center := c.position
 	center = center.Add(c.orientation)
 
 	view := mgl32.LookAtV(c.position, center, c.up)
-	projection := mgl32.Perspective(mgl32.DegToRad(FOVdeg), float32(c.width/c.height), nearPlane, farPlane)
 
-	projview := projection
-	projview = projview.Mul4(view)
+	return view
+}
 
-	gl.UniformMatrix4fv(gl.GetUniformLocation(*shader, gl.Str(uniform)), 1, false, &projview[0])
+// Generate a new projection matrix based on camera settings
+func (c *Camera) ProjMatrix() mgl32.Mat4 {
+	return mgl32.Perspective(mgl32.DegToRad(c.fovDEG), float32(c.width/c.height), c.nearPlane, c.farPlane)
 }
 
 // Takes inputs from the user allowing them to controll the camera
