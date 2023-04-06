@@ -50,7 +50,7 @@ func main() {
 	// Configure global settings
 	gl.Enable(gl.DEPTH_TEST)
 	gl.DepthFunc(gl.LESS)
-	gl.ClearColor(0.34, 0.32, 0.45, 1.0)
+	gl.ClearColor(0.025, 0.05, 0.3, 1.0)
 
 	var cubeVertices = []float32{
 		// Positions     UVs          Normals
@@ -94,7 +94,7 @@ func main() {
 		20, 21, 22, 22, 23, 20,
 	}
 
-	cube := NewSprite(cubeVertices, cubeIndices, "square.png", "simple.shader")
+	cube := NewSprite(cubeVertices, cubeIndices, "earth.png", "simple.shader")
 
 	previousTime := glfw.GetTime()
 
