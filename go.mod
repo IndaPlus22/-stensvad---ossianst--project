@@ -9,6 +9,5 @@ require (
 )
 
 require (
-	github.com/go-gl/example v0.0.0-20220216040751-d71b0d9f823d // indirect
 	golang.org/x/image v0.0.0-20210220032944-ac19c3e999fb // indirect
 )
