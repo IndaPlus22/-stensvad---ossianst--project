@@ -6,16 +6,17 @@ import (
 	"log"
 	"runtime"
 	"stensvad-ossianst-melvinbe-project/src/camera"
+	"stensvad-ossianst-melvinbe-project/src/planet"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-const windowWidth = 800
-const windowHeight = 600
+const windowWidth = 800 * 2
+const windowHeight = 600 * 2
 
-var cam = camera.NewCamera(windowWidth, windowHeight, mgl32.Vec3{0.0, 0.0, 2.0})
+var cam = camera.NewCamera(windowWidth, windowHeight, mgl32.Vec3{0.0, 0.0, 3.0})
 
 func init() {
 	// GLFW event handling must run on the main OS thread
@@ -33,7 +34,7 @@ func main() {
 	glfw.WindowHint(glfw.ContextVersionMinor, 1)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
-	window, err := glfw.CreateWindow(windowWidth, windowHeight, "Cube", nil, nil)
+	window, err := glfw.CreateWindow(windowWidth, windowHeight, "Planet Generator", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -50,51 +51,12 @@ func main() {
 	// Configure global settings
 	gl.Enable(gl.DEPTH_TEST)
 	gl.DepthFunc(gl.LESS)
-	gl.ClearColor(0.025, 0.05, 0.3, 1.0)
+	gl.ClearColor(0.34, 0.32, 0.45, 1.0)
+	gl.Enable(gl.CULL_FACE)
 
-	var cubeVertices = []float32{
-		// Positions     UVs          Normals
-		-1, -1, -1, 0, 0, 0, 0, -1,
-		-1, 1, -1, 0, 1, 0, 0, -1,
-		1, 1, -1, 1, 1, 0, 0, -1,
-		1, -1, -1, 1, 0, 0, 0, -1,
+	var vertices, indices = planet.Gen(50)
 
-		-1, -1, 1, 0, 0, 0, 0, 1,
-		-1, 1, 1, 0, 1, 0, 0, 1,
-		1, 1, 1, 1, 1, 0, 0, 1,
-		1, -1, 1, 1, 0, 0, 0, 1,
-
-		-1, -1, -1, 0, 0, -1, 0, 0,
-		-1, 1, -1, 0, 1, -1, 0, 0,
-		-1, 1, 1, 1, 1, -1, 0, 0,
-		-1, -1, 1, 1, 0, -1, 0, 0,
-
-		1, -1, -1, 0, 0, 1, 0, 0,
-		1, 1, -1, 0, 1, 1, 0, 0,
-		1, 1, 1, 1, 1, 1, 0, 0,
-		1, -1, 1, 1, 0, 1, 0, 0,
-
-		-1, -1, -1, 0, 0, 0, -1, 0,
-		-1, -1, 1, 0, 1, 0, -1, 0,
-		1, -1, 1, 1, 1, 0, -1, 0,
-		1, -1, -1, 1, 0, 0, -1, 0,
-
-		-1, 1, -1, 0, 0, 0, 1, 0,
-		-1, 1, 1, 0, 1, 0, 1, 0,
-		1, 1, 1, 1, 1, 0, 1, 0,
-		1, 1, -1, 1, 0, 0, 1, 0,
-	}
-
-	var cubeIndices = []uint32{
-		0, 1, 2, 2, 3, 0,
-		4, 5, 6, 6, 7, 4,
-		8, 9, 10, 10, 11, 8,
-		12, 13, 14, 14, 15, 12,
-		16, 17, 18, 18, 19, 16,
-		20, 21, 22, 22, 23, 20,
-	}
-
-	cube := NewSprite(cubeVertices, cubeIndices, "earth.png", "simple.shader")
+	cube := NewSprite(vertices, indices, "square.png", "simple.shader")
 
 	previousTime := glfw.GetTime()
 
@@ -107,7 +69,7 @@ func main() {
 		// Update:
 		cam.Inputs(window)
 
-		cube.rotation = cube.rotation.Add(mgl32.Vec3{0, float32(deltatime), 0})
+		cube.rotation = cube.rotation.Add(mgl32.Vec3{0, float32(deltatime * 0.0), 0})
 
 		// Draw:
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
