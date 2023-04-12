@@ -44,7 +44,7 @@ func (s *Sprite) updateMesh(vertices []float32, indices []uint32) {
 	s.ib = NewIndexBuffer(indices)
 
 	s.vb.bind()
-	s.va = NewVertexArray([]int{3, 2, 3})
+	s.va = NewVertexArray([]int{3, 3})
 }
 
 func (s *Sprite) draw() {
@@ -66,6 +66,9 @@ func (s *Sprite) draw() {
 	s.ib.bind()
 
 	gl.DrawElements(gl.TRIANGLES, s.ib.count, gl.UNSIGNED_INT, gl.PtrOffset(0))
+	gl.DrawElements(gl.LINES, s.ib.count, gl.UNSIGNED_INT, gl.PtrOffset(0))
+	gl.PointSize(10)
+	gl.DrawElements(gl.POINTS, s.ib.count, gl.UNSIGNED_INT, gl.PtrOffset(0))
 
 	s.va.unbind()
 	s.ib.unbind()

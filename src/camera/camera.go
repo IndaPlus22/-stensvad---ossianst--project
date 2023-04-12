@@ -84,7 +84,7 @@ func (c *Camera) Inputs(window *glfw.Window) {
 	if window.GetKey(glfw.KeyLeftShift) == glfw.Press {
 		c.speed = 0.4
 	} else if window.GetKey(glfw.KeyLeftShift) == glfw.Release {
-		c.speed = 0.1
+		c.speed = 0.03
 	}
 
 	//Makes it possible to control what direction the camera is looking
