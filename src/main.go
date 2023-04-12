@@ -4,6 +4,7 @@ import (
 	"fmt"
 	_ "image/png"
 	"log"
+	"math"
 	"runtime"
 	"stensvad-ossianst-melvinbe-project/src/camera"
 	"stensvad-ossianst-melvinbe-project/src/planet"
@@ -54,11 +55,13 @@ func main() {
 	gl.ClearColor(0.34, 0.32, 0.45, 1.0)
 	gl.Enable(gl.CULL_FACE)
 
-	var vertices, indices = planet.Gen(50)
+	var vertices, indices = planet.GenPlanet(1.0, 8)
 
-	cube := NewSprite(vertices, indices, "square.png", "simple.shader")
+	sphere := NewSprite(vertices, indices, "lighting.shader")
 
 	previousTime := glfw.GetTime()
+
+	t := 0.0
 
 	for !window.ShouldClose() {
 		// Calculate deltatime
@@ -69,12 +72,15 @@ func main() {
 		// Update:
 		cam.Inputs(window)
 
-		cube.rotation = cube.rotation.Add(mgl32.Vec3{0, float32(deltatime * 0.0), 0})
+		t += deltatime
 
 		// Draw:
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		cube.draw()
+		sphere.shader.bind()
+		sphere.shader.setUniform3f("lightPos", float32(math.Cos(t)*5.0), 0.0, float32(math.Sin(t)*5.0))
+
+		sphere.draw()
 
 		// Maintenance
 		window.SwapBuffers()
