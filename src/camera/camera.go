@@ -48,7 +48,7 @@ func (c *Camera) ViewMatrix() mgl32.Mat4 {
 
 // Generate a new projection matrix based on camera settings
 func (c *Camera) ProjMatrix() mgl32.Mat4 {
-	return mgl32.Perspective(mgl32.DegToRad(c.fovDEG), float32(c.width/c.height), c.nearPlane, c.farPlane)
+	return mgl32.Perspective(mgl32.DegToRad(c.fovDEG), float32(c.width)/float32(c.height), c.nearPlane, c.farPlane)
 }
 
 // Takes inputs from the user allowing them to controll the camera
