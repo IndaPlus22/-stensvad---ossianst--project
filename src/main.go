@@ -4,16 +4,18 @@ import (
 	"fmt"
 	_ "image/png"
 	"log"
+	"math"
 	"runtime"
 	"stensvad-ossianst-melvinbe-project/src/camera"
+	"stensvad-ossianst-melvinbe-project/src/planet"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-const windowWidth = 800
-const windowHeight = 600
+const windowWidth = 800 * 2
+const windowHeight = 600 * 2
 
 var cam = camera.NewCamera(windowWidth, windowHeight, mgl32.Vec3{0.0, 0.0, 2.0})
 
@@ -52,48 +54,6 @@ func main() {
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(0.34, 0.32, 0.45, 1.0)
 
-	var cubeVertices = []float32{
-		// Positions     UVs          Normals
-		-1, -1, -1, 0, 0, 0, 0, -1,
-		-1, 1, -1, 0, 1, 0, 0, -1,
-		1, 1, -1, 1, 1, 0, 0, -1,
-		1, -1, -1, 1, 0, 0, 0, -1,
-
-		-1, -1, 1, 0, 0, 0, 0, 1,
-		-1, 1, 1, 0, 1, 0, 0, 1,
-		1, 1, 1, 1, 1, 0, 0, 1,
-		1, -1, 1, 1, 0, 0, 0, 1,
-
-		-1, -1, -1, 0, 0, -1, 0, 0,
-		-1, 1, -1, 0, 1, -1, 0, 0,
-		-1, 1, 1, 1, 1, -1, 0, 0,
-		-1, -1, 1, 1, 0, -1, 0, 0,
-
-		1, -1, -1, 0, 0, 1, 0, 0,
-		1, 1, -1, 0, 1, 1, 0, 0,
-		1, 1, 1, 1, 1, 1, 0, 0,
-		1, -1, 1, 1, 0, 1, 0, 0,
-
-		-1, -1, -1, 0, 0, 0, -1, 0,
-		-1, -1, 1, 0, 1, 0, -1, 0,
-		1, -1, 1, 1, 1, 0, -1, 0,
-		1, -1, -1, 1, 0, 0, -1, 0,
-
-		-1, 1, -1, 0, 0, 0, 1, 0,
-		-1, 1, 1, 0, 1, 0, 1, 0,
-		1, 1, 1, 1, 1, 0, 1, 0,
-		1, 1, -1, 1, 0, 0, 1, 0,
-	}
-
-	var cubeIndices = []uint32{
-		0, 1, 2, 2, 3, 0,
-		4, 5, 6, 6, 7, 4,
-		8, 9, 10, 10, 11, 8,
-		12, 13, 14, 14, 15, 12,
-		16, 17, 18, 18, 19, 16,
-		20, 21, 22, 22, 23, 20,
-	}
-
 	var skyboxVertices = []float32{
 		// Positions
 		-1, -1, 1,
@@ -121,11 +81,15 @@ func main() {
 		6, 2, 3,
 	}
 
-	cube := NewSprite(cubeVertices, cubeIndices, "square.png", "simple.shader")
+	sphereVertices, sphereIndices := planet.GenPlanet(1.0, 8)
+
+	sphere := NewSprite(sphereVertices, sphereIndices, "lighting.shader")
 
 	skybox := NewSkyboxSprite(skyboxVertices, skyboxIndices, "skybox1", "skybox.shader")
 
 	previousTime := glfw.GetTime()
+
+	t := 0.0
 
 	for !window.ShouldClose() {
 		// Calculate deltatime
@@ -133,20 +97,21 @@ func main() {
 		deltatime := time - previousTime
 		previousTime = time
 
+		t += deltatime
+
 		// Update:
 		cam.Inputs(window)
 
-		cube.rotation = cube.rotation.Add(mgl32.Vec3{0, float32(deltatime), 0})
+		sphere.shader.bind()
+		sphere.shader.setUniform3f("lightPos", float32(math.Cos(t)*5.0), 0.0, float32(math.Sin(t)*5.0))
 
 		// Draw:
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		cube.draw()
+		sphere.draw()
 
 		// Draw the skybox LAST
-		gl.DepthFunc(gl.LEQUAL)
 		skybox.draw()
-		gl.DepthFunc(gl.LESS)
 
 		// Maintenance
 		window.SwapBuffers()
