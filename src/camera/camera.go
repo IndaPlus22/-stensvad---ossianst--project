@@ -51,6 +51,13 @@ func (c *Camera) ProjMatrix() mgl32.Mat4 {
 	return mgl32.Perspective(mgl32.DegToRad(c.fovDEG), float32(c.width)/float32(c.height), c.nearPlane, c.farPlane)
 }
 
+/*
+Returns the position of the camera in world space
+*/
+func (c *Camera) GetPosition() mgl32.Vec3 {
+	return c.position
+}
+
 // Takes inputs from the user allowing them to controll the camera
 func (c *Camera) Inputs(window *glfw.Window) {
 

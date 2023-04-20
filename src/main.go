@@ -81,7 +81,7 @@ func main() {
 		6, 2, 3,
 	}
 
-	sphereVertices, sphereIndices := planet.GenPlanet(1.0, 8)
+	sphereVertices, sphereIndices := planet.GenPlanet(1.0, 16)
 
 	sphere := NewSprite(sphereVertices, sphereIndices, "lighting.shader")
 
@@ -102,8 +102,10 @@ func main() {
 		// Update:
 		cam.Inputs(window)
 
+		// Sends position of the light source and camera to the shader:
 		sphere.shader.bind()
 		sphere.shader.setUniform3f("lightPos", float32(math.Cos(t)*5.0), 0.0, float32(math.Sin(t)*5.0))
+		sphere.shader.setUniform3f("camPos", cam.GetPosition().X(), cam.GetPosition().Y(), cam.GetPosition().Z())
 
 		// Draw:
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)

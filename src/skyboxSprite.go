@@ -50,6 +50,8 @@ func (s *SkyboxSprite) updateMesh(vertices []float32, indices []uint32) {
 }
 
 func (s *SkyboxSprite) draw() {
+	//ny
+	gl.DepthFunc(gl.LEQUAL)
 	s.texture.bind(0)
 
 	view := cam.ViewMatrix().Mat3().Mat4()
@@ -69,4 +71,5 @@ func (s *SkyboxSprite) draw() {
 	s.va.unbind()
 	s.ib.unbind()
 	s.shader.unbind()
+	gl.DepthFunc(gl.LESS)
 }
