@@ -27,28 +27,42 @@ in vec3 Normal;
 
 out vec4 FragColor;
 
+uniform vec3 camPos;
 uniform vec3 lightPos;
 uniform vec3 lightColor;
 
+// Diffuse light lights a surface in relation to its angle to the light source
+float calculateDiffuseLight() {
+    vec3 lightDirection = normalize(FragPos - lightPos);
+    return clamp(dot(Normal, -lightDirection), 0.0, 0.9);
+}
+
+// Specular light is the refletion on glossy areas
+float calculateSpecularLight() {
+    // The intensity of the glow and how much light is reflected
+    float intensity = 0.5;
+    int gloss = 16;
+
+    vec3 lightToFrag = normalize(FragPos - lightPos);
+    vec3 camToFrag = normalize(camPos - FragPos);
+    vec3 reflection = reflect(lightToFrag, Normal);
+
+    // The reflection is calculated by the dot product of the reflected light on the surface
+    // and the vector from the surface to the camera
+    float specLight = pow(clamp(dot(camToFrag, reflection), 0.0, 1.0), gloss);
+    return specLight * intensity;
+}
+
 void main()
 {
-    // ambient lighting
-    float ambientStrength = 0.1;
-    vec3 ambient = ambientStrength * lightColor;
+    // Ambient light: the natural light in space
+    vec3 ambientLight = vec3(0.1, 0.1, 0.1);
+    float diffuseLight = calculateDiffuseLight();
+    float specularLight = calculateSpecularLight();
 
-    // diffuse lighting
-    vec3 norm = normalize(Normal);
-    vec3 lightDir = normalize(lightPos - FragPos);
-    float diff = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse = diff * lightColor;
+    // Phong shading combines the different lighting types
+    vec3 phong = ambientLight + diffuseLight + specularLight;
 
-    // specular lighting
-    float specularStrength = 0.5;
-    vec3 viewDir = normalize(-FragPos);
-    vec3 reflectDir = reflect(-lightDir, norm);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-    vec3 specular = specularStrength * spec * lightColor;
-
-    vec3 result = (ambient + diffuse + specular) * vec3(0.6, 0.3, 0.3);
-    FragColor = vec4(result, 1.0);
+    // When adding textures, use texture2D() to get color value and multiply with the phong shading for the final FragColor
+    FragColor = vec4(phong * lightColor, 1.0);
 }
