@@ -87,24 +87,13 @@ func main() {
 
 	skybox := NewSkyboxSprite(skyboxVertices, skyboxIndices, "skybox1", "skybox.shader")
 
-	previousTime := glfw.GetTime()
-
-	t := 0.0
-
 	for !window.ShouldClose() {
-		// Calculate deltatime
-		time := glfw.GetTime()
-		deltatime := time - previousTime
-		previousTime = time
-
-		t += deltatime
-
 		// Update:
 		cam.Inputs(window)
 
 		// Sends position of the light source and camera to the shader:
 		sphere.shader.bind()
-		sphere.shader.setUniform3f("lightPos", float32(math.Cos(t)*5.0), 0.0, float32(math.Sin(t)*5.0))
+		sphere.shader.setUniform3f("lightPos", float32(math.Cos(cam.Time)*5.0), 0.0, float32(math.Sin(cam.Time)*5.0))
 		sphere.shader.setUniform3f("camPos", cam.GetPosition().X(), cam.GetPosition().Y(), cam.GetPosition().Z())
 
 		// Draw:
