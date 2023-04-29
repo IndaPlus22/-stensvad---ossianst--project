@@ -9,6 +9,8 @@ type Sprite struct {
 	position mgl32.Vec3
 	rotation mgl32.Vec3
 
+	texture Texture
+
 	shader Shader
 
 	vb VertexBuffer
@@ -16,10 +18,11 @@ type Sprite struct {
 	va VertexArray
 }
 
-func NewSprite(vertices []float32, indices []uint32, shaderPath string) Sprite {
+func NewSprite(vertices []float32, indices []uint32, texturePath, shaderPath string) Sprite {
 	s := Sprite{
 		mgl32.Vec3{0, 0, 0},
 		mgl32.Vec3{0, 0, 0},
+		NewTexture(texturePath),
 		NewShader(shaderPath),
 		VertexBuffer{0},
 		IndexBuffer{0, 0},
@@ -54,6 +57,9 @@ func (s *Sprite) draw() {
 
 	s.shader.bind()
 
+	s.texture.bind(0)
+	s.shader.setUniform1i("mainTexture", 0)
+
 	s.shader.setUniformMat4fv("model", model)
 	s.shader.setUniformMat4fv("view", view)
 
@@ -65,7 +71,7 @@ func (s *Sprite) draw() {
 
 	gl.DrawElements(gl.TRIANGLES, s.ib.count, gl.UNSIGNED_INT, gl.PtrOffset(0))
 	//gl.DrawElements(gl.LINES, s.ib.count, gl.UNSIGNED_INT, gl.PtrOffset(0))
-	//gl.PointSize(10)
+	//gl.PointSize(14)
 	//gl.DrawElements(gl.POINTS, s.ib.count, gl.UNSIGNED_INT, gl.PtrOffset(0))
 
 	s.va.unbind()
