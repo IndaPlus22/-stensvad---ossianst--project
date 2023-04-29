@@ -39,7 +39,7 @@ func getHeightAtPoint(point mgl32.Vec3) float32 {
 
 	height += getDetailNoiseHeight(point, 0.075, 0.75)
 
-	height += getRidgeNoiseHeight(point, 0.05, 1.75)
+	height += getRidgeNoiseHeight(point, 0.075, 1.75)
 
 	height += getCraterHeight(point)
 

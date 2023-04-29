@@ -35,7 +35,7 @@ func main() {
 	glfw.WindowHint(glfw.ContextVersionMinor, 1)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
-	window, err := glfw.CreateWindow(windowWidth, windowHeight, "Cube", nil, nil)
+	window, err := glfw.CreateWindow(windowWidth, windowHeight, "Planets!", nil, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -54,38 +54,11 @@ func main() {
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(0.34, 0.32, 0.45, 1.0)
 
-	var skyboxVertices = []float32{
-		// Positions
-		-1, -1, 1,
-		1, -1, 1,
-		1, -1, -1,
-		-1, -1, -1,
-		-1, 1, 1,
-		1, 1, 1,
-		1, 1, -1,
-		-1, 1, -1,
-	}
+	sphereVertices, sphereIndices := planet.GenPlanet(1.0, 150, 30)
 
-	var skyboxIndices = []uint32{
-		1, 2, 6,
-		6, 5, 1,
-		0, 4, 7,
-		7, 3, 0,
-		4, 5, 6,
-		6, 7, 4,
-		0, 3, 2,
-		2, 1, 0,
-		0, 1, 5,
-		5, 4, 0,
-		3, 7, 6,
-		6, 2, 3,
-	}
+	sphere := NewSprite(sphereVertices, sphereIndices, "square.png", "lighting.shader")
 
-	sphereVertices, sphereIndices := planet.GenPlanet(1.0, 16)
-
-	sphere := NewSprite(sphereVertices, sphereIndices, "lighting.shader")
-
-	skybox := NewSkyboxSprite(skyboxVertices, skyboxIndices, "skybox1", "skybox.shader")
+	skybox := NewSkybox("skybox1", "skybox.shader")
 
 	for !window.ShouldClose() {
 		// Update:

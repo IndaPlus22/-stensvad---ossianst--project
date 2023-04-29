@@ -2,13 +2,9 @@ package main
 
 import (
 	"github.com/go-gl/gl/v4.1-core/gl"
-	"github.com/go-gl/mathgl/mgl32"
 )
 
-type SkyboxSprite struct {
-	position mgl32.Vec3
-	rotation mgl32.Vec3
-
+type Skybox struct {
 	texture CubemapTexture
 	shader  Shader
 
@@ -17,10 +13,35 @@ type SkyboxSprite struct {
 	va VertexArray
 }
 
-func NewSkyboxSprite(vertices []float32, indices []uint32, texturePath string, shaderPath string) SkyboxSprite {
-	s := SkyboxSprite{
-		mgl32.Vec3{0, 0, 0},
-		mgl32.Vec3{0, 0, 0},
+func NewSkybox(texturePath string, shaderPath string) Skybox {
+	var vertices = []float32{
+		// Positions
+		-1, -1, 1,
+		1, -1, 1,
+		1, -1, -1,
+		-1, -1, -1,
+		-1, 1, 1,
+		1, 1, 1,
+		1, 1, -1,
+		-1, 1, -1,
+	}
+
+	var indices = []uint32{
+		1, 2, 6,
+		6, 5, 1,
+		0, 4, 7,
+		7, 3, 0,
+		4, 5, 6,
+		6, 7, 4,
+		0, 3, 2,
+		2, 1, 0,
+		0, 1, 5,
+		5, 4, 0,
+		3, 7, 6,
+		6, 2, 3,
+	}
+
+	s := Skybox{
 		NewCubemapTexture(texturePath),
 		NewShader(shaderPath),
 		VertexBuffer{0},
@@ -36,22 +57,18 @@ func NewSkyboxSprite(vertices []float32, indices []uint32, texturePath string, s
 
 	s.shader.unbind()
 
-	s.updateMesh(vertices, indices)
-
-	return s
-}
-
-func (s *SkyboxSprite) updateMesh(vertices []float32, indices []uint32) {
 	s.vb = NewVertexBuffer(vertices)
 	s.ib = NewIndexBuffer(indices)
 
 	s.vb.bind()
 	s.va = NewVertexArray([]int{3})
+
+	return s
 }
 
-func (s *SkyboxSprite) draw() {
-	//ny
+func (s *Skybox) draw() {
 	gl.DepthFunc(gl.LEQUAL)
+
 	s.texture.bind(0)
 
 	view := cam.ViewMatrix().Mat3().Mat4()
@@ -71,5 +88,6 @@ func (s *SkyboxSprite) draw() {
 	s.va.unbind()
 	s.ib.unbind()
 	s.shader.unbind()
+
 	gl.DepthFunc(gl.LESS)
 }
