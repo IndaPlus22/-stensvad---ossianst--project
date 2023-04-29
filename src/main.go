@@ -14,8 +14,8 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-const windowWidth = 800 * 2
-const windowHeight = 600 * 2
+const windowWidth = 800 * 3
+const windowHeight = 600 * 3
 
 var cam = camera.NewCamera(windowWidth, windowHeight, mgl32.Vec3{0.0, 0.0, 2.0})
 
@@ -66,11 +66,14 @@ func main() {
 
 		// Sends position of the light source and camera to the shader:
 		sphere.shader.bind()
+		// TODO: these should be in sprite draw method
 		sphere.shader.setUniform3f("lightPos", float32(math.Cos(cam.Time)*5.0), 0.0, float32(math.Sin(cam.Time)*5.0))
 		sphere.shader.setUniform3f("camPos", cam.GetPosition().X(), cam.GetPosition().Y(), cam.GetPosition().Z())
 
 		// Draw:
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+		//sphere.position = mgl32.Vec3{float32(cam.Time * 0.2), 0.0, 0.0}
 
 		sphere.draw()
 
