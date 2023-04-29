@@ -1,6 +1,8 @@
 package planet
 
 import (
+	"math"
+
 	"github.com/go-gl/mathgl/mgl32"
 )
 
@@ -19,12 +21,12 @@ Example usage:
 
 	vertices, indices := GenPlanet(1.0, 10)
 */
-func GenPlanet(radius float32, res uint32) ([]float32, []uint32) {
+func GenPlanet(radius float32, res uint32, numCraters uint32) ([]float32, []uint32) {
 	points, indices := genOctahedron(res)
 
-	normalizePointDistances(points, radius)
+	normalizePointDistances(points)
 
-	// TODO: cool noise algorithms for mountains and valleys
+	GenTerrain(points, radius, numCraters)
 
 	normals := calculateVertexNormals(points, indices)
 
@@ -170,7 +172,7 @@ func mergeDuplicateVertices(vertices []mgl32.Vec3, indices []uint32) {
 	mergedIndices := make([]uint32, len(indices))
 
 	for i := 0; i < len(indices); i++ {
-		vertexPos := vertices[indices[i]]
+		vertexPos := roundVec3(vertices[indices[i]])
 
 		// check if vertex is already in uniqueVertices
 		mergedIndex, inMap := uniqueVertices[vertexPos]
@@ -195,10 +197,18 @@ func mergeDuplicateVertices(vertices []mgl32.Vec3, indices []uint32) {
 	copy(indices, mergedIndices)
 }
 
+func roundVec3(vec mgl32.Vec3) mgl32.Vec3 {
+	return mgl32.Vec3{
+		float32(math.Round(float64(vec[0])*1e7) / 1e7),
+		float32(math.Round(float64(vec[1])*1e7) / 1e7),
+		float32(math.Round(float64(vec[2])*1e7) / 1e7),
+	}
+}
+
 // Set distance of every point to radius from origin.
-func normalizePointDistances(points []mgl32.Vec3, radius float32) {
+func normalizePointDistances(points []mgl32.Vec3) {
 	for i := 0; i < len(points); i++ {
-		points[i] = points[i].Normalize().Mul(radius)
+		points[i] = points[i].Normalize()
 	}
 }
 
