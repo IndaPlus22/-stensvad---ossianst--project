@@ -59,6 +59,7 @@ func (s *Sprite) draw() {
 
 	s.texture.bind(0)
 	s.shader.setUniform1i("mainTexture", 0)
+	s.shader.setUniform1f("texScale", 0.23)
 
 	s.shader.setUniformMat4fv("model", model)
 	s.shader.setUniformMat4fv("view", view)
