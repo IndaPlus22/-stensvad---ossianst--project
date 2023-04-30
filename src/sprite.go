@@ -64,7 +64,7 @@ func (s *Sprite) draw() {
 	s.shader.setUniformMat4fv("view", view)
 
 	//s.shader.setUniform3f("lightPos", 5.0, 1.0, 1.0)
-	s.shader.setUniform3f("lightColor", 1.0, 1.0, 1.0)
+	s.shader.setUniform3f("lightColor", .3, .2, .8)
 
 	s.va.bind()
 	s.ib.bind()

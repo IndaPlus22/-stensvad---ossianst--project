@@ -40,8 +40,8 @@ float calculateDiffuseLight() {
 // Specular light is the refletion on glossy areas
 float calculateSpecularLight() {
     // The intensity of the glow and how much light is reflected
-    float intensity = 0.5;
-    int gloss = 16;
+    float intensity = 0.1;
+    int gloss = 3;
 
     vec3 lightToFrag = normalize(FragPos - lightPos);
     vec3 camToFrag = normalize(camPos - FragPos);

@@ -4,10 +4,8 @@ import (
 	"fmt"
 	_ "image/png"
 	"log"
-	"math"
 	"runtime"
 	"stensvad-ossianst-melvinbe-project/src/camera"
-	"stensvad-ossianst-melvinbe-project/src/planet"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
@@ -54,9 +52,10 @@ func main() {
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(0.34, 0.32, 0.45, 1.0)
 
-	sphereVertices, sphereIndices := planet.GenPlanet(1.0, 150, 30)
-
-	sphere := NewSprite(sphereVertices, sphereIndices, "square.png", "lighting.shader")
+	p := NewPlanet(1.0, 150, 15)
+	p.addMoon(.2, 128, 30, 5, mgl32.Vec3{1, 0, 0}, 2)
+	p.addMoon(.4, 128, 100, 10, mgl32.Vec3{1, 1, 0}, 0.5)
+	p.moons[1].addMoon(0.1, 128, 10, 1.5, mgl32.Vec3{1, 1, 0}, 2)
 
 	skybox := NewSkybox("skybox1", "skybox.shader")
 
@@ -64,15 +63,11 @@ func main() {
 		// Update:
 		cam.Inputs(window)
 
-		// Sends position of the light source and camera to the shader:
-		sphere.shader.bind()
-		sphere.shader.setUniform3f("lightPos", float32(math.Cos(cam.Time)*5.0), 0.0, float32(math.Sin(cam.Time)*5.0))
-		sphere.shader.setUniform3f("camPos", cam.GetPosition().X(), cam.GetPosition().Y(), cam.GetPosition().Z())
-
 		// Draw:
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		sphere.draw()
+		p.draw()
+		fmt.Println(p.moons[1].moons[0].PlanetSprite.position)
 
 		// Draw the skybox LAST
 		skybox.draw()
