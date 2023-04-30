@@ -35,18 +35,28 @@ func GenTerrain(points []mgl32.Vec3, radius float32, numCraters uint32) {
 }
 
 func getHeightAtPoint(point mgl32.Vec3) float32 {
-	height := float32(1.0)
+	continentShape := detailedNoise(point, 0.08, 0.9)
 
-	height += getDetailNoiseHeight(point, 0.075, 0.75)
+	continentShape = smoothMax(continentShape, -0.2, 0.3)
+	if continentShape < 0 {
+		continentShape *= 10.0
+	}
 
-	height += getRidgeNoiseHeight(point, 0.075, 1.75)
+	mountainMask := smoothMax(1e-6, detailedNoise(point, 1.0, 1.0)-0.2, 0.4)
+	mountainShape := smoothMax(0, ridgidNoise(point, 1.1, 0.5), 0.5)
+	mountainShape = smoothMin(mountainMask, mountainShape, 0)
 
-	height += getCraterHeight(point)
+	craterShape := getCraterHeight(point)
 
-	return height
+	return 1 + (continentShape+mountainShape)*0.35 + craterShape
 }
 
-func getDetailNoiseHeight(point mgl32.Vec3, amplitude, frequency float32) float32 {
+func simpleNoise(point mgl32.Vec3, amplitude, frequency float32) float32 {
+	x, y, z := point.X()*frequency, point.Y()*frequency, point.Z()*frequency
+	return Snoise(x, y, z, seed) * amplitude
+}
+
+func detailedNoise(point mgl32.Vec3, amplitude, frequency float32) float32 {
 	noiseHeight := float32(0.0)
 
 	for i := 0; i < 5; i++ {
@@ -59,9 +69,8 @@ func getDetailNoiseHeight(point mgl32.Vec3, amplitude, frequency float32) float3
 	return noiseHeight
 }
 
-func getRidgeNoiseHeight(point mgl32.Vec3, amplitude, frequency float32) float32 {
-	x, y, z := point.X()*frequency, point.Y()*frequency, point.Z()*frequency
-	return 0.5 - float32(math.Abs(float64(Snoise(x, y, z, seed))))*amplitude
+func ridgidNoise(point mgl32.Vec3, amplitude, frequency float32) float32 {
+	return amplitude*0.5 - float32(math.Abs(float64(detailedNoise(point, amplitude, frequency))))
 }
 
 func getCraterHeight(point mgl32.Vec3) float32 {

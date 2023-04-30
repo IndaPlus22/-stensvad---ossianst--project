@@ -9,7 +9,8 @@ type Sprite struct {
 	position mgl32.Vec3
 	rotation mgl32.Vec3
 
-	texture Texture
+	texture   Texture
+	normalMap Texture
 
 	shader Shader
 
@@ -18,11 +19,12 @@ type Sprite struct {
 	va VertexArray
 }
 
-func NewSprite(vertices []float32, indices []uint32, texturePath, shaderPath string) Sprite {
+func NewSprite(vertices []float32, indices []uint32, texturePath, normalMapPath, shaderPath string) Sprite {
 	s := Sprite{
 		mgl32.Vec3{0, 0, 0},
 		mgl32.Vec3{0, 0, 0},
 		NewTexture(texturePath),
+		NewTexture(normalMapPath),
 		NewShader(shaderPath),
 		VertexBuffer{0},
 		IndexBuffer{0, 0},
@@ -59,7 +61,10 @@ func (s *Sprite) draw() {
 
 	s.texture.bind(0)
 	s.shader.setUniform1i("mainTexture", 0)
-	s.shader.setUniform1f("texScale", 0.23)
+	s.normalMap.bind(2)
+	s.shader.setUniform1i("normalMap", 2)
+	s.shader.setUniform1f("texScale", 1.0)
+	s.shader.setUniform1f("nmapScale", 4.0)
 
 	s.shader.setUniformMat4fv("model", model)
 	s.shader.setUniformMat4fv("view", view)

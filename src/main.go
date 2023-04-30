@@ -54,9 +54,9 @@ func main() {
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(0.34, 0.32, 0.45, 1.0)
 
-	sphereVertices, sphereIndices := planet.GenPlanet(1.0, 150, 30)
+	sphereVertices, sphereIndices := planet.GenPlanet(1.0, 250, 0)
 
-	sphere := NewSprite(sphereVertices, sphereIndices, "square.png", "lighting.shader")
+	sphere := NewSprite(sphereVertices, sphereIndices, "square.png", "normalmap_rocky.png", "lighting.shader")
 
 	skybox := NewSkybox("skybox1", "skybox.shader")
 
