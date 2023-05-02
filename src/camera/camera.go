@@ -58,6 +58,10 @@ func (c *Camera) GetPosition() mgl32.Vec3 {
 	return c.position
 }
 
+func (c *Camera) GetOrientation() mgl32.Vec3 {
+	return c.orientation
+}
+
 // Takes inputs from the user allowing them to controll the camera
 func (c *Camera) Inputs(window *glfw.Window) {
 

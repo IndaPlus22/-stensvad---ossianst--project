@@ -67,18 +67,18 @@ func main() {
 	}
 
 	var skyboxIndices = []uint32{
-		1, 2, 6,
-		6, 5, 1,
-		0, 4, 7,
-		7, 3, 0,
-		4, 5, 6,
-		6, 7, 4,
-		0, 3, 2,
-		2, 1, 0,
-		0, 1, 5,
-		5, 4, 0,
-		3, 7, 6,
-		6, 2, 3,
+		2, 1, 6,
+		1, 5, 6,
+		7, 4, 0,
+		0, 3, 7,
+		6, 5, 4,
+		4, 7, 6,
+		2, 3, 0,
+		0, 1, 2,
+		5, 1, 0,
+		0, 4, 5,
+		7, 3, 6,
+		2, 6, 3,
 	}
 
 	sphereVertices, sphereIndices := planet.GenPlanet(1.0, 16)
@@ -86,6 +86,10 @@ func main() {
 	sphere := NewSprite(sphereVertices, sphereIndices, "lighting.shader")
 
 	skybox := NewSkyboxSprite(skyboxVertices, skyboxIndices, "skybox1", "skybox.shader")
+
+	// TEST
+	atmosphere := NewPostProcessingFrame(windowWidth, windowHeight, "atmosphere.shader")
+	// TEST END
 
 	previousTime := glfw.GetTime()
 
@@ -101,19 +105,38 @@ func main() {
 
 		// Update:
 		cam.Inputs(window)
+		camPos := cam.GetPosition()
 
 		// Sends position of the light source and camera to the shader:
 		sphere.shader.bind()
 		sphere.shader.setUniform3f("lightPos", float32(math.Cos(t)*5.0), 0.0, float32(math.Sin(t)*5.0))
-		sphere.shader.setUniform3f("camPos", cam.GetPosition().X(), cam.GetPosition().Y(), cam.GetPosition().Z())
+		sphere.shader.setUniform3f("camPos", camPos.X(), camPos.Y(), camPos.Z())
+
+		// TEST
+		camDir := cam.GetOrientation()
+		atmosphere.shader.bind()
+		atmosphere.shader.setUniform3f("camDir", camDir.X(), camDir.Y(), camDir.Z())
+		atmosphere.shader.setUniform3f("camPos", camPos.X(), camPos.Y(), camPos.Z())
+		atmosphere.shader.setUniformMat4fv("viewMatrix", cam.ViewMatrix())
+		atmosphere.shader.setUniformMat4fv("projMatrix", cam.ProjMatrix())
+		fmt.Println(camPos)
+		atmosphere.fb.bind()
+		// TEST END
 
 		// Draw:
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-
-		sphere.draw()
+		gl.Enable(gl.DEPTH_TEST)
+		gl.Enable(gl.CULL_FACE)
 
 		// Draw the skybox LAST
 		skybox.draw()
+		sphere.draw()
+
+		// TEST
+		gl.Disable(gl.DEPTH_TEST)
+		atmosphere.fb.unbind()
+		atmosphere.draw()
+		// TEST END
 
 		// Maintenance
 		window.SwapBuffers()
