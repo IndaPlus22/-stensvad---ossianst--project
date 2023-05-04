@@ -19,17 +19,16 @@ in vec2 texCoords;
 
 uniform vec3 camDir;
 uniform vec3 camPos;
-uniform vec3 lightPos;
+
+//uniform vec3 lightPos;
+vec3 lightPos = vec3(3.0, 0.0, 0.0);
 uniform vec3 planetOrigin;
-
-uniform float planetRadius;
-uniform float atmosphereScale;
-
-uniform float far;
-uniform float near;
 
 uniform mat4 viewMatrix;
 uniform mat4 projMatrix;
+
+uniform float planetRadius;
+uniform float atmosphereScale;
 
 uniform sampler2D colorTexture;
 uniform sampler2D depthTexture;
@@ -40,12 +39,12 @@ float scatteringStrength = 6.0;
 vec3 wavelengths = vec3(7.0, 5.3, 4.4);
 vec3 scatteringCoefficients = vec3(pow(4.0 / wavelengths.x, 4.0), pow(4.0 / wavelengths.y, 4.0), pow(4.0 / wavelengths.z, 4.0)) * scatteringStrength;
 
-// Calculate how much of a ray from the camera intersects with a sphere
+// Calculate how much of a ray from the camera intersects with a sphere (the atmosphere)
 // Returns a vector with the distance to the sphere and the travelled distance through it
-vec2 raySphereIntersection(vec3 worldCoord, vec3 rayDirection, vec3 sphereOrigin, float sphereRadius) {
-    vec3 offset = worldCoord - sphereOrigin;
+vec2 raySphereIntersection(vec3 camPosition, vec3 cameraDirection, vec3 sphereOrigin, float sphereRadius) {
+    vec3 offset = camPosition - sphereOrigin;
     float a = 1.0;
-    float b = 2.0 * dot(offset, rayDirection);
+    float b = 2.0 * dot(offset, cameraDirection);
     float c = dot(offset, offset) - sphereRadius * sphereRadius;
     float d = b * b - 4.0 * a * c;
 
@@ -111,9 +110,12 @@ vec3 rayleighScattering(vec3 rayOrigin, vec3 rayDir, float rayLength, vec3 origi
     return originalColor * originalColorTransmittance + totalScattering;
 }
 
-float LinearizeDepth(float z) {
-    return (z - near) / (far - near);
+float linearizeDepth(float depth,float camNear,float camFar)
+{
+    float z_n = 2.0 * depth - 1.0;
+    return 2.0 * camNear * camFar / (camFar + camNear - z_n * (camFar - camNear));
 }
+
 
 void main() {
     vec4 finalColor = texture(colorTexture, texCoords);
@@ -124,18 +126,15 @@ void main() {
     vec4 worldCoord = inverseViewProjMatrix * clipCoord;
     worldCoord /= worldCoord.w;
 
-    // A ray from the current fragment in direction of the camera relative to the planet
-    vec3 fragRay = worldCoord.xyz + (planetOrigin - camPos);
-    
-    float depth = LinearizeDepth(texture(depthTexture, texCoords).r);
-    depth *= length(fragRay);
+    float depth = texture(depthTexture, texCoords).r;
+    float linearDepth = linearizeDepth(depth, 0.1, 100.0);
 
-    fragRay = normalize(fragRay);
+    vec3 fragRay = normalize(worldCoord.xyz + (vec3(0.0) - camPos));
 
     vec2 intersection = raySphereIntersection(worldCoord.xyz, fragRay, planetOrigin, atmosphereScale);
 
     float distToAtmosphere = intersection.x;
-    float distThroughAtmosphere = min(intersection.y, depth - distToAtmosphere);
+    float distThroughAtmosphere = min(intersection.y, linearDepth - distToAtmosphere);
 
     if (distThroughAtmosphere > 0.0) {
         vec3 point = worldCoord.xyz + fragRay * (distToAtmosphere);

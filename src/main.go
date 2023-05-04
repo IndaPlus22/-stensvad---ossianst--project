@@ -76,7 +76,7 @@ func main() {
 		atmosphere.shader.setUniformMat4fv("projMatrix", cam.ProjMatrix())
 
 		// Send planet properties to post processing shader:
-		var planetOrigin mgl32.Vec3 = mgl32.Vec3{0.0, 0.0, 0.0}
+		var planetOrigin mgl32.Vec3 = p.PlanetSprite.position
 		var atmosphereScale float32 = 1.3
 		var planetRadius float32 = 1.0
 		atmosphere.shader.setUniform3f("planetOrigin", planetOrigin.X(), planetOrigin.Y(), planetOrigin.Z())
