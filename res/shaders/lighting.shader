@@ -29,6 +29,13 @@ in vec3 Normal;
 
 out vec4 FragColor;
 
+uniform vec3 shoreColLow;
+uniform vec3 shoreColHigh;
+uniform vec3 flatColLow;
+uniform vec3 flatColHigh;
+uniform vec3 steepColLow;
+uniform vec3 steepColHigh;
+
 uniform sampler2D mainTexture;
 uniform float texScale;
 uniform sampler2D normalMap;
@@ -95,11 +102,40 @@ vec3 triplanarNormal(vec3 pos, vec3 surfaceNormal, sampler2D normalMap) {
     return normalize(tnormalX.zyx * weight.x + tnormalY.xzy * weight.y + tnormalZ.xyz * weight.z);
 }
 
+vec3 lerp(vec3 va, vec3 vb, float k) {
+    k = clamp(k, 0.0, 1.0);
+    return va * (1.0 - k) + vb * k;
+}
+
+vec3 heightColor(vec3 pos) {
+    vec3 col;
+
+    float height = length(pos) - 1;
+    float flatness = dot(normalize(Normal), normalize(pos));
+
+    col = shoreColLow;
+
+    col = lerp(col, shoreColHigh, (height - 0.01) / (0.02 - 0.01));
+
+    col = lerp(col, flatColLow, (height - 0.02) / (0.04 - 0.03));
+
+    col = lerp(col, flatColHigh, (height - 0.04) / (0.05 - 0.04));
+
+    col = lerp(col, steepColLow, (max(height - 0.02, 0) * (5)) * (0.9 - flatness) * (15.0));
+
+    col = lerp(col, steepColLow, (height - 0.05) / (0.05));
+
+    col = lerp(col, steepColHigh, (height - 0.12) * (50.0));
+
+    return col;
+}
+
 void main() {
-    // Triplanar mapping
-    vec3 texColor = vec3(0.5) + triplanarTexture(VertexPos, mainTexture) * 0.3;
+    vec3 texColor = vec3(0.7) + triplanarTexture(VertexPos, mainTexture) * 0.3;
 
     vec3 lightingNormal = triplanarNormal(VertexPos, Normal, normalMap);
+
+    vec3 heightColor = heightColor(VertexPos);
 
     // Ambient light: the natural light in space
     float ambientLight = 0.1;
@@ -110,5 +146,5 @@ void main() {
     float phong = ambientLight + diffuseLight + specularLight;
 
     // When adding textures, use texture2D() to get color value and multiply with the phong shading for the final FragColor
-    FragColor = vec4(texColor * phong * lightColor, 1.0);
+    FragColor = vec4(texColor * heightColor * phong * lightColor, 1.0);
 }

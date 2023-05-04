@@ -54,9 +54,10 @@ func main() {
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(0.34, 0.32, 0.45, 1.0)
 
-	sphereVertices, sphereIndices := planet.GenPlanet(1.0, 250, 0)
+	sphereVertices, sphereIndices := planet.GenPlanet(250, 0)
 
 	sphere := NewSprite(sphereVertices, sphereIndices, "square.png", "normalmap_rocky.png", "lighting.shader")
+	sphere.scale = 2.0
 
 	skybox := NewSkybox("skybox1", "skybox.shader")
 
@@ -67,7 +68,7 @@ func main() {
 		// Sends position of the light source and camera to the shader:
 		sphere.shader.bind()
 		// TODO: these should be in sprite draw method
-		sphere.shader.setUniform3f("lightPos", float32(math.Cos(cam.Time)*5.0), 0.0, float32(math.Sin(cam.Time)*5.0))
+		sphere.shader.setUniform3f("lightPos", float32(math.Cos(0)*5.0), 0.0, float32(math.Sin(0)*5.0))
 		sphere.shader.setUniform3f("camPos", cam.GetPosition().X(), cam.GetPosition().Y(), cam.GetPosition().Z())
 
 		// Draw:

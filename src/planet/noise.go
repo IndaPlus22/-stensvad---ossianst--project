@@ -33,8 +33,21 @@ func grad3(hash uint8, x, y, z float64) float64 {
 	return grad[h][0]*x + grad[h][1]*y + grad[h][2]*z
 }
 
-// 3D simplex noise
-func Snoise(x, y, z float32, seed float32) float32 {
+/*
+Snoise samples 3D simplex noise and returns a value between -1.0 and 1.0.
+Close samples will return similar values.
+
+Parameters:
+- x, y, z: Sample coordinates
+
+Returns:
+- value: A smooth value between -1.0, 1.0
+
+Example usage:
+
+	sample := Snoise(1.0, 2.0, 3.0)
+*/
+func Snoise(x, y, z float32) float32 {
 	x += seed
 
 	const F3 = 1.0 / 3.0
@@ -61,6 +74,7 @@ func Snoise(x, y, z float32, seed float32) float32 {
 	var i1, j1, k1 int
 	var i2, j2, k2 int
 
+	// Determine which simplex we are in and set up the corresponding indices
 	if x0 >= y0 {
 		if y0 >= z0 {
 			i1, j1, k1, i2, j2, k2 = 1, 0, 0, 1, 1, 0
@@ -100,6 +114,7 @@ func Snoise(x, y, z float32, seed float32) float32 {
 		n0 = 0
 	} else {
 		t0 *= t0
+		// Calculate the contribution using the grad3 function and permuted indices
 		n0 = t0 * t0 * grad3(perm[(i+int(perm[(j+int(perm[k]))%256]))%256], x0, y0, z0)
 	}
 
@@ -108,6 +123,7 @@ func Snoise(x, y, z float32, seed float32) float32 {
 		n1 = 0
 	} else {
 		t1 *= t1
+		// Calculate the contribution using the grad3 function and permuted indices
 		n1 = t1 * t1 * grad3(perm[(i+i1+int(perm[(j+j1+int(perm[(k+k1)%256]))%256]))%256], x1, y1, z1)
 	}
 
@@ -116,6 +132,7 @@ func Snoise(x, y, z float32, seed float32) float32 {
 		n2 = 0
 	} else {
 		t2 *= t2
+		// Calculate the contribution using the grad3 function and permuted indices
 		n2 = t2 * t2 * grad3(perm[(i+i2+int(perm[(j+j2+int(perm[(k+k2)%256]))%256]))%256], x2, y2, z2)
 	}
 
@@ -124,8 +141,10 @@ func Snoise(x, y, z float32, seed float32) float32 {
 		n3 = 0
 	} else {
 		t3 *= t3
+		// Calculate the contribution using the grad3 function and permuted indices
 		n3 = t3 * t3 * grad3(perm[(i+1+int(perm[(j+1+int(perm[(k+1)%256]))%256]))%256], x3, y3, z3)
 	}
 
+	// Scale the result to be within -1.0 and 1.0
 	return float32((n0 + n1 + n2 + n3) / 0.030555466710745972)
 }
