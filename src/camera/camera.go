@@ -81,6 +81,14 @@ func (c *Camera) GetOrientation() mgl32.Vec3 {
 	return c.orientation
 }
 
+func (c *Camera) GetNearPlane() float32 {
+	return c.nearPlane
+}
+
+func (c *Camera) GetFarPlane() float32 {
+	return c.farPlane
+}
+
 // Takes inputs from the user allowing them to controll the camera
 func (c *Camera) Inputs(window *glfw.Window) {
 

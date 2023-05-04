@@ -89,11 +89,12 @@ func main() {
 		// Draw:
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		gl.Enable(gl.DEPTH_TEST)
-		gl.Enable(gl.CULL_FACE)
+		//gl.Enable(gl.CULL_FACE)
+
+		p.draw()
 
 		// Draw the skybox LAST
 		skybox.draw()
-		p.draw()
 
 		// Disable depth testing and apply post processing:
 		gl.Disable(gl.DEPTH_TEST)

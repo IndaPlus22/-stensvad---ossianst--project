@@ -25,10 +25,14 @@ uniform vec3 planetOrigin;
 uniform float planetRadius;
 uniform float atmosphereScale;
 
+uniform float far;
+uniform float near;
+
 uniform mat4 viewMatrix;
 uniform mat4 projMatrix;
 
 uniform sampler2D colorTexture;
+uniform sampler2D depthTexture;
 
 // The solution for atmosphere scattering is based on Sebastian Lagues implementation
 // in this video on YouTube: https://www.youtube.com/watch?v=DxfEbulyFcY
@@ -107,6 +111,10 @@ vec3 rayleighScattering(vec3 rayOrigin, vec3 rayDir, float rayLength, vec3 origi
     return originalColor * originalColorTransmittance + totalScattering;
 }
 
+float LinearizeDepth(float z) {
+    return (z - near) / (far - near);
+}
+
 void main() {
     vec4 finalColor = texture(colorTexture, texCoords);
 
@@ -117,14 +125,17 @@ void main() {
     worldCoord /= worldCoord.w;
 
     // A ray from the current fragment in direction of the camera relative to the planet
-    vec3 fragRay = normalize(worldCoord.xyz + (planetOrigin - camPos));
+    vec3 fragRay = worldCoord.xyz + (planetOrigin - camPos);
     
-    vec2 fakeDepth = raySphereIntersection(worldCoord.xyz, fragRay, planetOrigin, planetRadius);
+    float depth = LinearizeDepth(texture(depthTexture, texCoords).r);
+    depth *= length(fragRay);
+
+    fragRay = normalize(fragRay);
 
     vec2 intersection = raySphereIntersection(worldCoord.xyz, fragRay, planetOrigin, atmosphereScale);
 
     float distToAtmosphere = intersection.x;
-    float distThroughAtmosphere = min(intersection.y, fakeDepth.x - distToAtmosphere);
+    float distThroughAtmosphere = min(intersection.y, depth - distToAtmosphere);
 
     if (distThroughAtmosphere > 0.0) {
         vec3 point = worldCoord.xyz + fragRay * (distToAtmosphere);
