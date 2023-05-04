@@ -28,7 +28,8 @@ type Camera struct {
 	lastFrameMouseX float64
 	lastFrameMouseY float64
 	timeFactor      float64
-	Time            float64
+	TimeDiff        float64
+	TimeTot         float64
 }
 
 var previousTime = 0.0
@@ -49,7 +50,7 @@ Example usage:
 	cam := GenCamera(1080, 720, mgl32.Vec3{0, 0, 0})
 */
 func NewCamera(width int, height int, position mgl32.Vec3) Camera {
-	c := Camera{position, mgl32.Vec3{0.0, 0.0, -1.0}, mgl32.Vec3{0.0, 1.0, 0.0}, true, width, height, 0.1, 45.0, 0.1, 100, 0.1, -90, 0, 0, 0, 1.0, 0.0}
+	c := Camera{position, mgl32.Vec3{0.0, 0.0, -1.0}, mgl32.Vec3{0.0, 1.0, 0.0}, true, width, height, 0.1, 45.0, 0.1, 100, 0.1, -90, 0, 0, 0, 1.0, 0.0, 0.0}
 
 	return c
 }
@@ -84,7 +85,8 @@ func (c *Camera) Inputs(window *glfw.Window) {
 	deltatime := time - previousTime
 	previousTime = time
 
-	c.Time += deltatime * c.timeFactor
+	c.TimeDiff = deltatime * c.timeFactor
+	c.TimeTot += c.TimeDiff
 
 	//Positioning of the camera
 	if window.GetKey(glfw.KeyW) == glfw.Press {

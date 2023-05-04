@@ -54,6 +54,7 @@ float calculateDiffuseLight(vec3 normal) {
 // Specular light is the refletion on glossy areas
 float calculateSpecularLight(vec3 normal) {
     // The intensity of the glow and how much light is reflected
+
     float intensity = 0.3;
     int gloss = 2;
 
