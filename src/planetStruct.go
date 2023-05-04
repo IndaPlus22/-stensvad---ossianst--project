@@ -29,9 +29,10 @@ Example usage:
 	p := GenPLanet(20, 128, 30)
 */
 func NewPlanet(radius float32, res uint32, numCraters uint32) Planet {
-	planetVertices, planetIndices := planet.GenPlanet(radius, res, numCraters)
+	planetVertices, planetIndices := planet.GenPlanet(res, numCraters)
 
-	p := Planet{NewSprite(planetVertices, planetIndices, "square.png", "lighting.shader"), mgl32.Vec3{}, nil, 0}
+	p := Planet{NewSprite(planetVertices, planetIndices, "square.png", "normalmap_rocky.png", "lighting.shader"), mgl32.Vec3{}, nil, 0}
+	p.PlanetSprite.scale = radius
 
 	p.PlanetSprite.shader.bind()
 	p.PlanetSprite.shader.setUniform3f("lightPos", float32(5.0), 0.0, float32(5.0))
