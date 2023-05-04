@@ -12,8 +12,8 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-var windowWidth = 800
-var windowHeight = 600
+var windowWidth = 800 * 2
+var windowHeight = 600 * 2
 
 var cam = camera.NewCamera(windowWidth, windowHeight, mgl32.Vec3{0.0, 0.0, 2.0})
 
@@ -61,7 +61,7 @@ func main() {
 	p.addMoon(.4, 128, 100, 10, mgl32.Vec3{1, 1, 0}, 0.5)
 	p.moons[1].addMoon(0.1, 128, 10, 1.5, mgl32.Vec3{1, 1, 0}, 3)
 
-	skybox := NewSkybox("skybox1", "skybox.shader")
+	skybox := NewSkybox("skybox2", "skybox.shader")
 
 	for !window.ShouldClose() {
 		// Update:
