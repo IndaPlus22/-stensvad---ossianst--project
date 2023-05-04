@@ -3,17 +3,18 @@ package planet
 import (
 	"math"
 	"math/rand"
+	"sync"
+	"time"
 
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-var seed = float32(0.0)
-
-// Crater settings
-const rimWidth = 0.7
-const rimSteepness = 0.4
-const smoothness = 0.3
-const floorHeight = -0.3
+const (
+	rimWidth     = 0.7
+	rimSteepness = 0.4
+	smoothness   = 0.3
+	floorHeight  = -0.3
+)
 
 type Crater struct {
 	position mgl32.Vec3
@@ -22,36 +23,70 @@ type Crater struct {
 
 var craters = []Crater{}
 
-func GenTerrain(points []mgl32.Vec3, radius float32, numCraters uint32) {
+var seed = float32(0.0)
+
+func GenTerrain(points []mgl32.Vec3, numCraters uint32) {
 	genCraters(numCraters)
 
+	rand.NewSource(time.Now().UnixNano())
 	seed = rand.Float32() * 1.0e5
 
-	// TODO: calculate point for slices seperately using goroutines
-	for i := 0; i < len(points); i++ {
-		points[i] = points[i].Mul(getHeightAtPoint(points[i]))
-		points[i] = points[i].Mul(radius)
+	var wg sync.WaitGroup
+
+	numGoroutines := 20 // Set the desired number of goroutines
+	numPoints := len(points)
+
+	concurrency := (numPoints + numGoroutines - 1) / numGoroutines
+
+	for i := 0; i < numGoroutines; i++ {
+		wg.Add(1)
+		go func(startIndex int) {
+			defer wg.Done()
+			endIndex := startIndex + concurrency
+			if endIndex > numPoints {
+				endIndex = numPoints
+			}
+
+			for j := startIndex; j < endIndex; j++ {
+				points[j] = points[j].Mul(getHeightAtPoint(points[j]))
+			}
+		}(i * concurrency)
 	}
+
+	wg.Wait()
 }
 
 func getHeightAtPoint(point mgl32.Vec3) float32 {
-	height := float32(1.0)
+	continentShape := detailedNoise(point, 0.15, 1.0)
 
-	height += getDetailNoiseHeight(point, 0.075, 0.75)
+	if continentShape < 0.0 {
+		continentShape *= 6.0
+	}
+	continentShape = smoothMax(continentShape, -0.4, 0.8)
 
-	height += getRidgeNoiseHeight(point, 0.075, 1.75)
+	mountainMask := smoothMax(1e-6, detailedNoise(point, 1.2, 0.8)-0.5, 0.4)
+	mountainShape := smoothMax(0, ridgidNoise(point, 1.5, 0.75), 0.5)
+	mountainShape = smoothMin(mountainMask, mountainShape, 0)
 
-	height += getCraterHeight(point)
+	craterShape := getCraterHeight(point)
 
-	return height
+	//return 1 + (continentShape)*0.35 + craterShape
+	//return 1 + (mountainShape)*0.35 + craterShape
+	//return 1 + (mountainMask)*0.35
+	return 1 + (continentShape+mountainShape)*0.35 + craterShape
 }
 
-func getDetailNoiseHeight(point mgl32.Vec3, amplitude, frequency float32) float32 {
+func simpleNoise(point mgl32.Vec3, amplitude, frequency float32) float32 {
+	x, y, z := point.X()*frequency, point.Y()*frequency, point.Z()*frequency
+	return Snoise(x, y, z) * amplitude
+}
+
+func detailedNoise(point mgl32.Vec3, amplitude, frequency float32) float32 {
 	noiseHeight := float32(0.0)
 
 	for i := 0; i < 5; i++ {
 		x, y, z := point.X()*frequency, point.Y()*frequency, point.Z()*frequency
-		noiseHeight += Snoise(x, y, z, seed) * float32(amplitude)
+		noiseHeight += Snoise(x, y, z) * float32(amplitude)
 		frequency *= 2.0
 		amplitude *= 0.5
 	}
@@ -59,9 +94,8 @@ func getDetailNoiseHeight(point mgl32.Vec3, amplitude, frequency float32) float3
 	return noiseHeight
 }
 
-func getRidgeNoiseHeight(point mgl32.Vec3, amplitude, frequency float32) float32 {
-	x, y, z := point.X()*frequency, point.Y()*frequency, point.Z()*frequency
-	return 0.5 - float32(math.Abs(float64(Snoise(x, y, z, seed))))*amplitude
+func ridgidNoise(point mgl32.Vec3, amplitude, frequency float32) float32 {
+	return amplitude*0.5 - float32(math.Abs(float64(detailedNoise(point, amplitude, frequency))))
 }
 
 func getCraterHeight(point mgl32.Vec3) float32 {

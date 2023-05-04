@@ -12,8 +12,8 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-const windowWidth = 800 * 2
-const windowHeight = 600 * 2
+const windowWidth = 800 * 3
+const windowHeight = 600 * 3
 
 var cam = camera.NewCamera(windowWidth, windowHeight, mgl32.Vec3{0.0, 0.0, 2.0})
 
