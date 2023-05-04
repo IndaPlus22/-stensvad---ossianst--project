@@ -66,8 +66,7 @@ func NewSkybox(texturePath string, shaderPath string) Skybox {
 	return s
 }
 
-func (s *Skybox) draw() {
-	gl.DepthFunc(gl.LEQUAL)
+func (s *SkyboxSprite) draw() {
 
 	s.texture.bind(0)
 

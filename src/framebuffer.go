@@ -19,7 +19,25 @@ func NewFrameBuffer(w uint32, h uint32) FrameBuffer {
 }
 
 func (fb *FrameBuffer) addColorTexture(slot uint32, texWidth uint32, texHeight uint32, colorAttachment uint32) {
-	// TODO, will be implemented if needed
+	// Create new texture
+	var tex uint32
+	gl.GenTextures(1, &tex)
+
+	// Bind texture to "slot"
+	gl.ActiveTexture(gl.TEXTURE0 + slot)
+	gl.BindTexture(gl.TEXTURE_2D, tex)
+
+	// Texture paramaters
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+
+	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGBA, int32(texWidth), int32(texHeight), 0, gl.RGBA, gl.UNSIGNED_BYTE, nil)
+
+	fb.bind()
+	gl.FramebufferTexture2D(gl.FRAMEBUFFER, colorAttachment, gl.TEXTURE_2D, tex, 0)
+	fb.unbind()
 }
 
 func (fb *FrameBuffer) addDepthTexture(slot uint32, texWidth uint32, texHeight uint32) {
@@ -42,6 +60,10 @@ func (fb *FrameBuffer) addDepthTexture(slot uint32, texWidth uint32, texHeight u
 	fb.bind()
 	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.DEPTH_ATTACHMENT, gl.TEXTURE_2D, tex, 0)
 	fb.unbind()
+}
+
+func (fb *FrameBuffer) addRenderBuffer(rb uint32) {
+	gl.FramebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, rb)
 }
 
 func (fb *FrameBuffer) delete() {
