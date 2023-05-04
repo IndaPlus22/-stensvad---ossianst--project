@@ -12,8 +12,8 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-const windowWidth = 800 * 3
-const windowHeight = 600 * 3
+var windowWidth = 800
+var windowHeight = 600
 
 var cam = camera.NewCamera(windowWidth, windowHeight, mgl32.Vec3{0.0, 0.0, 2.0})
 
@@ -39,6 +39,8 @@ func main() {
 	}
 	window.MakeContextCurrent()
 
+	fbWidth, fbHeight := window.GetFramebufferSize()
+
 	// Initialize Glow
 	if err := gl.Init(); err != nil {
 		panic(err)
@@ -52,7 +54,7 @@ func main() {
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(0.34, 0.32, 0.45, 1.0)
 
-	atmosphere := NewPostProcessingFrame(windowWidth, windowHeight, "atmosphere.shader")
+	atmosphere := NewPostProcessingFrame(uint32(fbWidth), uint32(fbHeight), "atmosphere.shader")
 
 	p := NewPlanet(1.0, 150, 0)
 	p.addMoon(.2, 128, 30, 5, mgl32.Vec3{1, 0, 0}, 2)

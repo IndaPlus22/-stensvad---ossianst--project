@@ -5,7 +5,7 @@ import "github.com/go-gl/gl/v4.1-core/gl"
 type PostProcessingFrame struct {
 	va VertexArray
 	fb FrameBuffer
-	rb RenderBuffer
+
 	ib IndexBuffer
 
 	shader Shader
@@ -44,10 +44,10 @@ func NewPostProcessingFrame(w uint32, h uint32, shaderPath string) PostProcessin
 	fb.addDepthTexture(3, w, h)
 
 	// Create renderbuffer and attach to the framebuffer
-	rb := NewRenderBuffer(w, h)
-	fb.addRenderBuffer(rb.id)
+	//rb := NewRenderBuffer(w, h)
+	//fb.addRenderBuffer(rb.id)
 
-	ppf := PostProcessingFrame{va, fb, rb, ib, shader}
+	ppf := PostProcessingFrame{va, fb, ib, shader}
 	ppf.shader.bind()
 	ppf.shader.setUniform1i("colorTexture", 1)
 	ppf.shader.setUniform1i("depthTexture", 3)
