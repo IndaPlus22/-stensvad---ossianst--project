@@ -74,7 +74,6 @@ func main() {
 		atmosphere.shader.setUniform3f("camPos", camPos.X(), camPos.Y(), camPos.Z())
 		atmosphere.shader.setUniformMat4fv("viewMatrix", cam.ViewMatrix())
 		atmosphere.shader.setUniformMat4fv("projMatrix", cam.ProjMatrix())
-		atmosphere.shader.setUniform3f("lightPos", float32(math.Cos(t)*5.0), 0.0, float32(math.Sin(t)*5.0))
 
 		// Send planet properties to post processing shader:
 		var planetOrigin mgl32.Vec3 = mgl32.Vec3{0.0, 0.0, 0.0}
@@ -92,10 +91,9 @@ func main() {
 		gl.Enable(gl.DEPTH_TEST)
 		gl.Enable(gl.CULL_FACE)
 
-		p.draw()
-
 		// Draw the skybox LAST
 		skybox.draw()
+		p.draw()
 
 		// Disable depth testing and apply post processing:
 		gl.Disable(gl.DEPTH_TEST)

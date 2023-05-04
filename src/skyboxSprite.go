@@ -66,7 +66,7 @@ func NewSkybox(texturePath string, shaderPath string) Skybox {
 	return s
 }
 
-func (s *SkyboxSprite) draw() {
+func (s *Skybox) draw() {
 
 	s.texture.bind(0)
 
