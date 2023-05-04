@@ -11,13 +11,17 @@ type PostProcessingFrame struct {
 	shader Shader
 }
 
+/*
+Initialize a framebuffer with an attached renderbuffer with the dimensions wxh, and an associated
+shader program with the filename shaderPath.
+*/
 func NewPostProcessingFrame(w uint32, h uint32, shaderPath string) PostProcessingFrame {
 	// Vertices and indices for the postprocessing rectangle
 	var vertices = []float32{
+		1.0, 1.0, 1.0, 1.0,
 		1.0, -1.0, 1.0, 0.0,
 		-1.0, -1.0, 0.0, 0.0,
 		-1.0, 1.0, 0.0, 1.0,
-		1.0, 1.0, 1.0, 1.0,
 	}
 
 	var indices = []uint32{
@@ -30,7 +34,6 @@ func NewPostProcessingFrame(w uint32, h uint32, shaderPath string) PostProcessin
 	ib := NewIndexBuffer(indices)
 	vb.bind()
 
-	// Antar fyra vertices?
 	va := NewVertexArray([]int{2, 2})
 	va.bind()
 	shader := NewShader(shaderPath)
@@ -42,17 +45,15 @@ func NewPostProcessingFrame(w uint32, h uint32, shaderPath string) PostProcessin
 	// Create renderbuffer and attach to the framebuffer
 	rb := NewRenderBuffer(w, h)
 	fb.addRenderBuffer(rb.id)
-	// Instead create a depth texture NY
-	//fb.addDepthTexture(2, w, h)
 
 	ppf := PostProcessingFrame{va, fb, rb, ib, shader}
 	ppf.shader.bind()
-	ppf.shader.setUniform1i("screenTexture", 1)
-	// NY
-	//ppf.shader.setUniform1f("depthTexture", 2)
+	ppf.shader.setUniform1i("colorTexture", 1)
+
 	return ppf
 }
 
+// Bind necessary buffers and shader programs and render the post processing effects.
 func (ppf *PostProcessingFrame) draw() {
 	ppf.shader.bind()
 	ppf.va.bind()

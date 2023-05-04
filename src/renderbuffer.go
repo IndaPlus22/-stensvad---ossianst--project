@@ -8,6 +8,7 @@ type RenderBuffer struct {
 	height uint32
 }
 
+// Initialize a render buffer of dimensions wxh and return it as a RenderBuffer object
 func NewRenderBuffer(w uint32, h uint32) RenderBuffer {
 	var id uint32
 
