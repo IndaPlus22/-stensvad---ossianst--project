@@ -5,6 +5,7 @@ layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
 
 out vec3 VertexPos;
+out vec3 vertexNormal;
 out vec3 FragPos;
 out vec3 Normal;
 
@@ -14,6 +15,7 @@ uniform mat4 projection;
 
 void main() {
     VertexPos = aPos;
+    vertexNormal = aNormal;
     FragPos = vec3(model * vec4(aPos, 1.0));
     Normal = mat3(transpose(inverse(model))) * aNormal; 
 
@@ -24,6 +26,7 @@ void main() {
 #version 330
 
 in vec3 VertexPos;
+in vec3 vertexNormal;
 in vec3 FragPos;
 in vec3 Normal;
 
@@ -112,7 +115,7 @@ vec3 heightColor(vec3 pos) {
     vec3 col;
 
     float height = length(pos) - 1;
-    float flatness = dot(normalize(Normal), normalize(pos));
+    float flatness = dot(normalize(vertexNormal), normalize(pos));
 
     col = shoreColLow;
 
