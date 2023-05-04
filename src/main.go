@@ -52,10 +52,10 @@ func main() {
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(0.34, 0.32, 0.45, 1.0)
 
-	p := NewPlanet(1.0, 150, 15)
+	p := NewPlanet(1.0, 150, 0)
 	p.addMoon(.2, 128, 30, 5, mgl32.Vec3{1, 0, 0}, 2)
 	p.addMoon(.4, 128, 100, 10, mgl32.Vec3{1, 1, 0}, 0.5)
-	p.moons[1].addMoon(0.1, 128, 10, 1.5, mgl32.Vec3{1, 1, 0}, 2)
+	p.moons[1].addMoon(0.1, 128, 10, 1.5, mgl32.Vec3{1, 1, 0}, 3)
 
 	skybox := NewSkybox("skybox1", "skybox.shader")
 
@@ -67,7 +67,6 @@ func main() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		p.draw()
-		fmt.Println(p.moons[1].moons[0].PlanetSprite.position)
 
 		// Draw the skybox LAST
 		skybox.draw()
