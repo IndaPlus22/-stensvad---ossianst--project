@@ -10,8 +10,8 @@ import (
 GenPlanet generates the vertices and indices of a planet with the specified radius and vertex resolution.
 
 Parameters:
-- radius: the radius of the planet
 - res: the resolution of the planet (number of vertices in circumference / 4)
+- numCraters: The number of craters to be generated
 
 Returns:
 - vertices: the vertices of the planet, as a float32 array
@@ -19,14 +19,14 @@ Returns:
 
 Example usage:
 
-	vertices, indices := GenPlanet(1.0, 10)
+	vertices, indices := GenPlanet(10, 20)
 */
-func GenPlanet(radius float32, res uint32, numCraters uint32) ([]float32, []uint32) {
+func GenPlanet(res uint32, numCraters uint32) ([]float32, []uint32) {
 	points, indices := genOctahedron(res)
 
 	normalizePointDistances(points)
 
-	GenTerrain(points, radius, numCraters)
+	GenTerrain(points, numCraters)
 
 	normals := calculateVertexNormals(points, indices)
 

@@ -8,6 +8,7 @@ import (
 type Sprite struct {
 	position mgl32.Vec3
 	rotation mgl32.Vec3
+	scale    float32
 
 	texture   Texture
 	normalMap Texture
@@ -23,6 +24,7 @@ func NewSprite(vertices []float32, indices []uint32, texturePath, normalMapPath,
 	s := Sprite{
 		mgl32.Vec3{0, 0, 0},
 		mgl32.Vec3{0, 0, 0},
+		1.0,
 		NewTexture(texturePath),
 		NewTexture(normalMapPath),
 		NewShader(shaderPath),
@@ -32,8 +34,23 @@ func NewSprite(vertices []float32, indices []uint32, texturePath, normalMapPath,
 	}
 
 	s.shader.bind()
+
+	s.shader.setUniform3f("shoreColLow", 0.98, 0.9, 0.62)
+	s.shader.setUniform3f("shoreColHigh", 0.949, 0.794, 0.414)
+	s.shader.setUniform3f("flatColLow", 0.489, 0.617, 0)
+	s.shader.setUniform3f("flatColHigh", 0.261, 0.408, 0)
+	s.shader.setUniform3f("steepColLow", 0.421, 0.316, 0.237)
+	s.shader.setUniform3f("steepColHigh", 0.9, 0.9, 0.9)
+
+	s.shader.setUniform1i("mainTexture", 0)
+	s.shader.setUniform1i("normalMap", 2)
+	s.shader.setUniform1f("texScale", 1.0)
+	s.shader.setUniform1f("nmapScale", 4.0)
+
+	s.shader.setUniform3f("lightColor", 1.0, 1.0, 1.0)
+
 	s.shader.setUniformMat4fv("projection", cam.ProjMatrix())
-	s.shader.setUniform1i("tex", 0)
+
 	s.shader.unbind()
 
 	s.updateMesh(vertices, indices)
@@ -54,23 +71,18 @@ func (s *Sprite) draw() {
 	model = model.Mul4(mgl32.HomogRotate3D(float32(s.rotation.X()), mgl32.Vec3{1, 0, 0}))
 	model = model.Mul4(mgl32.HomogRotate3D(float32(s.rotation.Y()), mgl32.Vec3{0, 1, 0}))
 	model = model.Mul4(mgl32.HomogRotate3D(float32(s.rotation.Z()), mgl32.Vec3{0, 0, 1}))
+	model = model.Mul4(mgl32.Scale3D(s.scale, s.scale, s.scale))
 
 	view := cam.ViewMatrix()
 
 	s.shader.bind()
-
 	s.texture.bind(0)
-	s.shader.setUniform1i("mainTexture", 0)
 	s.normalMap.bind(2)
-	s.shader.setUniform1i("normalMap", 2)
-	s.shader.setUniform1f("texScale", 1.0)
-	s.shader.setUniform1f("nmapScale", 4.0)
 
 	s.shader.setUniformMat4fv("model", model)
 	s.shader.setUniformMat4fv("view", view)
 
 	//s.shader.setUniform3f("lightPos", 5.0, 1.0, 1.0)
-	s.shader.setUniform3f("lightColor", 1.0, 1.0, 1.0)
 
 	s.va.bind()
 	s.ib.bind()
