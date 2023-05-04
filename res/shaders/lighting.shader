@@ -73,9 +73,9 @@ vec3 triplanarTexture(vec3 pos, sampler2D tex) {
     vec2 uvY = vec2(fract(pos.x * texScale), fract(pos.z * texScale));
     vec2 uvZ = vec2(fract(pos.x * texScale), fract(pos.y * texScale));
 
-    vec3 colX = vec3(texture2D(tex, uvX));
-    vec3 colY = vec3(texture2D(tex, uvY));
-    vec3 colZ = vec3(texture2D(tex, uvZ));
+    vec3 colX = vec3(texture(tex, uvX));
+    vec3 colY = vec3(texture(tex, uvY));
+    vec3 colZ = vec3(texture(tex, uvZ));
 
     vec3 weight = vec3(pow(abs(Normal.x), 2), pow(abs(Normal.y), 2), pow(abs(Normal.z), 2));
 
@@ -89,9 +89,9 @@ vec3 triplanarNormal(vec3 pos, vec3 surfaceNormal, sampler2D normalMap) {
     vec2 uvY = vec2(fract(pos.x * nmapScale), fract(pos.z * nmapScale));
     vec2 uvZ = vec2(fract(pos.x * nmapScale), fract(pos.y * nmapScale));
 
-    vec3 tnormalX = vec3(texture2D(normalMap, uvX));
-    vec3 tnormalY = vec3(texture2D(normalMap, uvY));
-    vec3 tnormalZ = vec3(texture2D(normalMap, uvZ));
+    vec3 tnormalX = vec3(texture(normalMap, uvX));
+    vec3 tnormalY = vec3(texture(normalMap, uvY));
+    vec3 tnormalZ = vec3(texture(normalMap, uvZ));
 
     tnormalX = vec3(tnormalX.xy + surfaceNormal.zy, tnormalX.z * surfaceNormal.x);
     tnormalY = vec3(tnormalY.xy + surfaceNormal.xz, tnormalY.z * surfaceNormal.y);
@@ -146,6 +146,6 @@ void main() {
     // Phong shading combines the different lighting types
     float phong = ambientLight + diffuseLight + specularLight;
 
-    // When adding textures, use texture2D() to get color value and multiply with the phong shading for the final FragColor
+    // When adding textures, use texture() to get color value and multiply with the phong shading for the final FragColor
     FragColor = vec4(texColor * heightColor * phong * lightColor, 1.0);
 }
