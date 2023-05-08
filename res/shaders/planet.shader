@@ -5,9 +5,10 @@ layout (location = 0) in vec3 aPos;
 layout (location = 1) in vec3 aNormal;
 
 out vec3 VertexPos;
-out vec3 vertexNormal;
+out vec3 VertexNormal;
 out vec3 FragPos;
 out vec3 Normal;
+out mat4 Model;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -15,7 +16,8 @@ uniform mat4 projection;
 
 void main() {
     VertexPos = aPos;
-    vertexNormal = aNormal;
+    VertexNormal = aNormal;
+    Model = model;
     FragPos = vec3(model * vec4(aPos, 1.0));
     Normal = mat3(transpose(inverse(model))) * aNormal; 
 
@@ -26,12 +28,14 @@ void main() {
 #version 330
 
 in vec3 VertexPos;
-in vec3 vertexNormal;
+in vec3 VertexNormal;
 in vec3 FragPos;
 in vec3 Normal;
+in mat4 Model;
 
 out vec4 FragColor;
 
+// Colors
 uniform vec3 shoreColLow;
 uniform vec3 shoreColHigh;
 uniform vec3 flatColLow;
@@ -39,9 +43,10 @@ uniform vec3 flatColHigh;
 uniform vec3 steepColLow;
 uniform vec3 steepColHigh;
 
+// Textures
 uniform sampler2D mainTexture;
-uniform float texScale;
 uniform sampler2D normalMap;
+uniform float texScale;
 uniform float nMapScale;
 
 uniform vec3 camPos;
@@ -59,7 +64,7 @@ float calculateSpecularLight(vec3 normal) {
     // The intensity of the glow and how much light is reflected
 
     float intensity = 0.3;
-    int gloss = 2;
+    float gloss = 1.5;
 
     vec3 lightToFrag = normalize(FragPos - lightPos);
     vec3 camToFrag = normalize(camPos - FragPos);
@@ -71,39 +76,54 @@ float calculateSpecularLight(vec3 normal) {
     return specLight * intensity;
 }
 
+// Maps a texture to six sides of the model
 vec3 triplanarTexture(vec3 pos, sampler2D tex) {
+    // Calculate tex coords for sampling in three directions
+    // fract ensures that all sampling is within [0.0, 1.0]
     vec2 uvX = vec2(fract(pos.z * texScale), fract(pos.y * texScale));
     vec2 uvY = vec2(fract(pos.x * texScale), fract(pos.z * texScale));
     vec2 uvZ = vec2(fract(pos.x * texScale), fract(pos.y * texScale));
 
+    // Sample texture colors
     vec3 colX = vec3(texture(tex, uvX));
     vec3 colY = vec3(texture(tex, uvY));
     vec3 colZ = vec3(texture(tex, uvZ));
 
-    vec3 weight = vec3(pow(abs(Normal.x), 2), pow(abs(Normal.y), 2), pow(abs(Normal.z), 2));
-
+    // Calculate how much every color will contribute to final color
+    vec3 weight = vec3(pow(abs(Normal.x), 0.5), pow(abs(Normal.y), 0.5), pow(abs(Normal.z), 0.5));
     weight /= dot(weight, vec3(1));
 
+    // Return final color
     return colX * weight.x + colY * weight.y + colZ * weight.z;
 }
 
-vec3 triplanarNormal(vec3 pos, vec3 surfaceNormal, sampler2D normalMap) {
+// Maps normal map to six sides of the model
+vec3 triplanarNormal(vec3 pos, sampler2D normalMap) {
+    // Calculate tex coords for sampling in three directions
+    // fract ensures that all sampling is within [0.0, 1.0]
     vec2 uvX = vec2(fract(pos.z * nMapScale), fract(pos.y * nMapScale));
     vec2 uvY = vec2(fract(pos.x * nMapScale), fract(pos.z * nMapScale));
     vec2 uvZ = vec2(fract(pos.x * nMapScale), fract(pos.y * nMapScale));
 
-    vec3 tnormalX = vec3(texture(normalMap, uvX));
-    vec3 tnormalY = vec3(texture(normalMap, uvY));
-    vec3 tnormalZ = vec3(texture(normalMap, uvZ));
+    // Sample normalmap normals
+    // Also convert color range [0.0, 1.0] to normal range [-1.0, 1.0]
+    vec3 normalX = texture(normalMap, uvX).rgb * 2.0 - 1.0;
+    vec3 normalY = texture(normalMap, uvY).rgb * 2.0 - 1.0;
+    vec3 normalZ = texture(normalMap, uvZ).rgb * 2.0 - 1.0;
 
-    tnormalX = vec3(tnormalX.xy + surfaceNormal.zy, tnormalX.z * surfaceNormal.x);
-    tnormalY = vec3(tnormalY.xy + surfaceNormal.xz, tnormalY.z * surfaceNormal.y);
-    tnormalZ = vec3(tnormalZ.xy + surfaceNormal.xy, tnormalZ.z * surfaceNormal.z);
+    // Calculate normal in every direction
+    vec3 tnormalX = vec3(normalX.xy + VertexNormal.zy, normalX.z * VertexNormal.x);
+    vec3 tnormalY = vec3(normalY.xy + VertexNormal.xz, normalY.z * VertexNormal.y);
+    vec3 tnormalZ = vec3(normalZ.xy + VertexNormal.xy, normalZ.z * VertexNormal.z);
 
-    vec3 weight = vec3(pow(abs(surfaceNormal.x), 2), pow(abs(surfaceNormal.y), 2), pow(abs(surfaceNormal.z), 2));
-    weight /= dot(weight, vec3(1));
+    // Calculate how much every tangent normal will contribute to final normal
+    vec3 weight = vec3(pow(abs(VertexNormal.x), 1.5), pow(abs(VertexNormal.y), 1.5), pow(abs(VertexNormal.z), 1.5));
+    weight /= dot(weight, vec3(1.0));
 
-    return normalize(tnormalX.zyx * weight.x + tnormalY.xzy * weight.y + tnormalZ.xyz * weight.z);
+    // Calculate normal in model space
+    vec3 modelNormal = normalize(tnormalX.zyx * weight.x + tnormalY.xzy * weight.y + tnormalZ.xyz * weight.z);
+    // Return normal in world space
+    return mat3(transpose(inverse(Model))) * modelNormal;
 }
 
 vec3 lerp(vec3 va, vec3 vb, float k) {
@@ -111,11 +131,12 @@ vec3 lerp(vec3 va, vec3 vb, float k) {
     return va * (1.0 - k) + vb * k;
 }
 
+// Calculates color based on model height
 vec3 heightColor(vec3 pos) {
     vec3 col;
 
     float height = length(pos) - 1;
-    float flatness = dot(normalize(vertexNormal), normalize(pos));
+    float flatness = dot(normalize(VertexNormal), normalize(pos));
 
     col = shoreColLow;
 
@@ -125,7 +146,8 @@ vec3 heightColor(vec3 pos) {
 
     col = lerp(col, flatColHigh, (height - 0.04) / (0.05 - 0.04));
 
-    col = lerp(col, steepColLow, (max(height - 0.02, 0) * (5)) * (0.9 - flatness) * (15.0));
+    // Color less flat areas as steep color
+    col = lerp(col, steepColLow, (max(height - 0.02, 0) * (5.0)) * (0.9 - flatness) * (15.0));
 
     col = lerp(col, steepColLow, (height - 0.05) / (0.05));
 
@@ -135,9 +157,11 @@ vec3 heightColor(vec3 pos) {
 }
 
 void main() {
+    // Partially sample texture
     vec3 texColor = vec3(0.7) + triplanarTexture(VertexPos, mainTexture) * 0.3;
 
-    vec3 lightingNormal = triplanarNormal(VertexPos, Normal, normalMap);
+    // Calculate normal to be used for lighting calculations
+    vec3 lightingNormal = triplanarNormal(VertexPos, normalMap);
 
     vec3 heightColor = heightColor(VertexPos);
 
@@ -149,6 +173,7 @@ void main() {
     // Phong shading combines the different lighting types
     float phong = ambientLight + diffuseLight + specularLight;
 
-    // When adding textures, use texture() to get color value and multiply with the phong shading for the final FragColor
     FragColor = vec4(texColor * heightColor * phong * lightColor, 1.0);
+
+    //FragColor = vec4(lightingNormal, 1.0);
 }

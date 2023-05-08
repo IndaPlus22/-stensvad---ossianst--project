@@ -1,6 +1,8 @@
 package main
 
-import "github.com/go-gl/gl/v4.1-core/gl"
+import (
+	"github.com/go-gl/gl/v4.1-core/gl"
+)
 
 type PostProcessingFrame struct {
 	va VertexArray

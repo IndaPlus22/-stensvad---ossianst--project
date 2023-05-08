@@ -48,6 +48,7 @@ Example usage:
 	sample := Snoise(1.0, 2.0, 3.0)
 */
 func Snoise(x, y, z float32) float32 {
+	// Offset sampling by seed
 	x += seed
 
 	const F3 = 1.0 / 3.0
@@ -55,6 +56,7 @@ func Snoise(x, y, z float32) float32 {
 
 	var n0, n1, n2, n3 float64
 
+	// Calculate fractional and integer part of input coordinates
 	s := (x + y + z) * F3
 	xs := x + s
 	ys := y + s
@@ -63,6 +65,7 @@ func Snoise(x, y, z float32) float32 {
 	j := int(math.Floor(float64(ys)))
 	k := int(math.Floor(float64(zs)))
 
+	// Calculate offsets and fractional parts within unit cube
 	t := float64(i+j+k) * G3
 	X0 := float64(i) - t
 	Y0 := float64(j) - t
@@ -74,7 +77,7 @@ func Snoise(x, y, z float32) float32 {
 	var i1, j1, k1 int
 	var i2, j2, k2 int
 
-	// Determine which simplex we are in and set up the corresponding indices
+	// Determine which simplex we are in and set up corresponding indices
 	if x0 >= y0 {
 		if y0 >= z0 {
 			i1, j1, k1, i2, j2, k2 = 1, 0, 0, 1, 1, 0

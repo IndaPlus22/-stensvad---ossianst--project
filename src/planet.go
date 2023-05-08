@@ -17,22 +17,22 @@ type Planet struct {
 }
 
 /*
-NewPlanet generates a new planet and retruns it.
+NewPlanet generates a new planet struct and returns it
 
 Parameters:
-- radius: the radius of the planet
-- res: the resolution of the planet (number of vertices in circumference / 4)
-- numCraters: the amount of craters on the planet
+- settings: the planet settings struct containing a recipe for what the planet will be
 
 Returns:
-- planet: a Planet Struct
+- p: the new planet object
 
 Example usage:
 
-	p := GenPLanet(20, 128, 30)
+	earthSettings := DefaultEarth()
+	planet := NewPlanet(earthSettings)
 */
-func NewPlanet(settings *PlanetSettings) Planet {
-	planetVertices, planetIndices := GenPlanet(&settings.shape)
+func NewPlanet(settings PlanetSettings) Planet {
+	// Generate the planet sprite model
+	planetVertices, planetIndices := GenPlanet(settings.shape)
 
 	sprite := NewSprite(
 		planetVertices,
@@ -61,6 +61,7 @@ func NewPlanet(settings *PlanetSettings) Planet {
 	return p
 }
 
+// Binds the color uniforms of the "planet.shader" shader to the planets colors
 func (p *Planet) setColors(c PlanetColors) {
 	p.sprite.shader.bind()
 
@@ -73,7 +74,7 @@ func (p *Planet) setColors(c PlanetColors) {
 	p.sprite.shader.setUniform3f("waterCol", c.waterCol.X(), c.waterCol.Y(), c.waterCol.Z())
 }
 
-// Adds a moon around the planet that calls this function
+// Add an orbital to this planet
 func (p *Planet) addOrbital(planet *Planet, distance float32, axis mgl32.Vec3, timeToOrbit float64) {
 	planet.axisAroundParent = axis.Normalize()
 	planet.orbitTime = timeToOrbit
@@ -81,11 +82,13 @@ func (p *Planet) addOrbital(planet *Planet, distance float32, axis mgl32.Vec3, t
 	p.orbital = append(p.orbital, planet)
 }
 
+// Draws planet and its orbitals
 func (p *Planet) Draw() {
 	p.sprite.draw(p.position, p.rotation, p.scale)
 
 	p.rotation = mgl32.Vec3{0, float32(cam.TimeTot), 0}
 
+	// Draw and rotate all orbitals around this planet
 	for i := range p.orbital {
 		rotM := mgl32.HomogRotate3D(float32(cam.TimeDiff*p.orbital[i].orbitTime), p.orbital[i].axisAroundParent)
 		p.orbital[i].position = rotM.Mul4x1(p.orbital[i].position.Vec4(0)).Vec3().Add(p.position)

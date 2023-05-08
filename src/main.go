@@ -14,7 +14,7 @@ import (
 var windowWidth = 800 * 2
 var windowHeight = 600 * 2
 
-var cam = NewCamera(windowWidth, windowHeight, mgl32.Vec3{0.0, 0.0, 2.0})
+var cam = NewCamera(windowWidth, windowHeight, mgl32.Vec3{0.0, 0.0, 5.0})
 
 func init() {
 	// GLFW event handling must run on the main OS thread
@@ -54,24 +54,41 @@ func main() {
 	gl.ClearColor(0.34, 0.32, 0.45, 1.0)
 
 	// Create planets
-	earthSettings := EarthSettings()
-	moonSettings := MoonSettings()
+	earthSettings := DefaultEarth()
+	moonSettings := DefaultMoon()
+
+	sun := NewPlanet(DefaultSun())
+
+	earthSettings.shape.radius = 1.5
+	p1 := NewPlanet(earthSettings)
 
 	earthSettings.shape.radius = 1.0
-	sun := NewPlanet(&earthSettings)
+	earthSettings.colors = RandomColors()
+	p2 := NewPlanet(earthSettings)
 
-	moonSettings.shape.radius = 0.3
-	p1 := NewPlanet(&moonSettings)
+	earthSettings.shape.radius = 0.75
+	earthSettings.colors = RandomColors()
+	p3 := NewPlanet(earthSettings)
+
+	moonSettings.shape.radius = 0.75
+	m1 := NewPlanet(moonSettings)
 
 	moonSettings.shape.radius = 0.5
-	p2 := NewPlanet(&moonSettings)
+	moonSettings.colors = RandomColors()
+	m2 := NewPlanet(moonSettings)
 
-	moonSettings.shape.radius = 0.2
-	p3 := NewPlanet(&moonSettings)
+	moonSettings.shape.radius = 0.3
+	moonSettings.colors = RandomColors()
+	m3 := NewPlanet(moonSettings)
 
-	sun.addOrbital(&p1, 5, mgl32.Vec3{1, 0, 0}, 2)
-	p2.addOrbital(&p3, 1.5, mgl32.Vec3{1, 1, 0}, 3)
-	sun.addOrbital(&p2, 10, mgl32.Vec3{1, 1, 0}, 0.5)
+	// Set orbits of planets
+	p1.addOrbital(&m1, 6.0, mgl32.Vec3{0.0, 1.0, 0.1}, -1.25)
+	p1.addOrbital(&m2, 5.0, mgl32.Vec3{0.5, 1.0, 0.0}, 1.5)
+	p2.addOrbital(&m3, 4.0, mgl32.Vec3{0.0, 1.0, 0.2}, -1.75)
+
+	sun.addOrbital(&p1, 12.0, mgl32.Vec3{0.1, 1.0, 0.1}, 0.75)
+	sun.addOrbital(&p2, 18.0, mgl32.Vec3{0.2, 1.0, 0.0}, -1.1)
+	sun.addOrbital(&p3, 21.0, mgl32.Vec3{0.0, 1.0, 0.3}, 1.25)
 
 	// Create atmosphere
 	atmosphere := NewPostProcessingFrame(uint32(fbWidth), uint32(fbHeight), "atmosphere.shader")
@@ -94,7 +111,7 @@ func main() {
 		atmosphere.shader.setUniformMat4fv("projMatrix", cam.ProjMatrix())
 
 		// Send planet properties to post processing shader:
-		var planetOrigin mgl32.Vec3 = sun.position
+		var planetOrigin mgl32.Vec3 = p2.position
 		var atmosphereScale float32 = 1.3
 		var planetRadius float32 = 1.0
 		atmosphere.shader.setUniform3f("planetOrigin", planetOrigin.X(), planetOrigin.Y(), planetOrigin.Z())
@@ -107,7 +124,7 @@ func main() {
 		// Draw:
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		gl.Enable(gl.DEPTH_TEST)
-		//gl.Enable(gl.CULL_FACE)
+		gl.Enable(gl.CULL_FACE)
 
 		sun.Draw()
 
