@@ -29,35 +29,44 @@ func NewShader(filePath string) Shader {
 }
 
 func parseShader(filePath string) (vertexShader, fragmentShader string, err error) {
+	// Read content of file
 	content, err := os.ReadFile(filePath)
 	if err != nil {
 		return "", "", err
 	}
 
+	// Two builders for storing vertex and fragment shaders
 	var sb [2]strings.Builder
 	var currentShader *strings.Builder
 
+	// Iterate over each line in content
 	for _, line := range strings.Split(string(content), "\n") {
+		// Check if line is first line of a shader
 		if strings.HasPrefix(line, "#shader") {
+			// Determine shader type based on line content
 			if strings.Contains(line, "vertex") {
-				currentShader = &sb[0]
+				currentShader = &sb[0] // Set current shader builder to vertex
 			} else if strings.Contains(line, "fragment") {
-				currentShader = &sb[1]
+				currentShader = &sb[1] // Set current shader builder to fragment
 			}
 		} else if currentShader != nil {
+			// If we are inside a shader block, append line to current shader builder
 			currentShader.WriteString(line + "\n")
 		}
 	}
 
+	// Return vertex and fragment shaders with null terminators
 	return sb[0].String() + "\x00", sb[1].String() + "\x00", nil
 }
 
 func newProgram(vertexShaderSource, fragmentShaderSource string) (uint32, error) {
+	// Compile vertex shader
 	vertexShader, err := compileShader(vertexShaderSource, gl.VERTEX_SHADER)
 	if err != nil {
 		return 0, err
 	}
 
+	// Compile fragment shader
 	fragmentShader, err := compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER)
 	if err != nil {
 		return 0, err
@@ -65,12 +74,16 @@ func newProgram(vertexShaderSource, fragmentShaderSource string) (uint32, error)
 
 	program := gl.CreateProgram()
 
+	// Attach shaders to program
 	gl.AttachShader(program, vertexShader)
 	gl.AttachShader(program, fragmentShader)
+
 	gl.LinkProgram(program)
 
 	var status int32
 	gl.GetProgramiv(program, gl.LINK_STATUS, &status)
+
+	// Check for errors
 	if status == gl.FALSE {
 		var logLength int32
 		gl.GetProgramiv(program, gl.INFO_LOG_LENGTH, &logLength)
@@ -81,6 +94,7 @@ func newProgram(vertexShaderSource, fragmentShaderSource string) (uint32, error)
 		return 0, fmt.Errorf("failed to link program: %v", log)
 	}
 
+	// Delete shaders as they are no longer needed
 	gl.DeleteShader(vertexShader)
 	gl.DeleteShader(fragmentShader)
 
@@ -90,13 +104,21 @@ func newProgram(vertexShaderSource, fragmentShaderSource string) (uint32, error)
 func compileShader(source string, shaderType uint32) (uint32, error) {
 	shader := gl.CreateShader(shaderType)
 
+	// Convert source string to C-style string
 	csources, free := gl.Strs(source)
+
+	// Set shader source code
 	gl.ShaderSource(shader, 1, csources, nil)
+
+	// Free C-style string resources
 	free()
+
 	gl.CompileShader(shader)
 
 	var status int32
 	gl.GetShaderiv(shader, gl.COMPILE_STATUS, &status)
+
+	// Check for errors
 	if status == gl.FALSE {
 		var logLength int32
 		gl.GetShaderiv(shader, gl.INFO_LOG_LENGTH, &logLength)

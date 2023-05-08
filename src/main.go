@@ -4,20 +4,17 @@ import (
 	"fmt"
 	_ "image/png"
 	"log"
-	"math"
 	"runtime"
-	"stensvad-ossianst-melvinbe-project/src/camera"
-	"stensvad-ossianst-melvinbe-project/src/planet"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-const windowWidth = 800 * 2
-const windowHeight = 600 * 2
+var windowWidth = 800 * 2
+var windowHeight = 600 * 2
 
-var cam = camera.NewCamera(windowWidth, windowHeight, mgl32.Vec3{0.0, 0.0, 3.0})
+var cam = NewCamera(windowWidth, windowHeight, mgl32.Vec3{0.0, 0.0, 5.0})
 
 func init() {
 	// GLFW event handling must run on the main OS thread
@@ -35,11 +32,13 @@ func main() {
 	glfw.WindowHint(glfw.ContextVersionMinor, 1)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
-	window, err := glfw.CreateWindow(windowWidth, windowHeight, "Planet Generator", nil, nil)
+	window, err := glfw.CreateWindow(windowWidth, windowHeight, "Planets!", nil, nil)
 	if err != nil {
 		panic(err)
 	}
 	window.MakeContextCurrent()
+
+	fbWidth, fbHeight := window.GetFramebufferSize()
 
 	// Initialize Glow
 	if err := gl.Init(); err != nil {
@@ -53,34 +52,89 @@ func main() {
 	gl.Enable(gl.DEPTH_TEST)
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(0.34, 0.32, 0.45, 1.0)
-	gl.Enable(gl.CULL_FACE)
 
-	var vertices, indices = planet.GenPlanet(1.0, 8)
+	// Create planets
+	earthSettings := DefaultEarth()
+	moonSettings := DefaultMoon()
 
-	sphere := NewSprite(vertices, indices, "lighting.shader")
+	sun := NewPlanet(DefaultSun())
 
-	previousTime := glfw.GetTime()
+	earthSettings.shape.radius = 1.5
+	p1 := NewPlanet(earthSettings)
 
-	t := 0.0
+	earthSettings.shape.radius = 1.0
+	earthSettings.colors = RandomColors()
+	p2 := NewPlanet(earthSettings)
+
+	earthSettings.shape.radius = 0.75
+	earthSettings.colors = RandomColors()
+	p3 := NewPlanet(earthSettings)
+
+	moonSettings.shape.radius = 0.75
+	m1 := NewPlanet(moonSettings)
+
+	moonSettings.shape.radius = 0.5
+	moonSettings.colors = RandomColors()
+	m2 := NewPlanet(moonSettings)
+
+	moonSettings.shape.radius = 0.3
+	moonSettings.colors = RandomColors()
+	m3 := NewPlanet(moonSettings)
+
+	// Set orbits of planets
+	p1.addOrbital(&m1, 6.0, mgl32.Vec3{0.0, 1.0, 0.1}, -1.25)
+	p1.addOrbital(&m2, 5.0, mgl32.Vec3{0.5, 1.0, 0.0}, 1.5)
+	p2.addOrbital(&m3, 4.0, mgl32.Vec3{0.0, 1.0, 0.2}, -1.75)
+
+	sun.addOrbital(&p1, 12.0, mgl32.Vec3{0.1, 1.0, 0.1}, 0.75)
+	sun.addOrbital(&p2, 18.0, mgl32.Vec3{0.2, 1.0, 0.0}, -1.1)
+	sun.addOrbital(&p3, 21.0, mgl32.Vec3{0.0, 1.0, 0.3}, 1.25)
+
+	// Create atmosphere
+	atmosphere := NewPostProcessingFrame(uint32(fbWidth), uint32(fbHeight), "atmosphere.shader")
+
+	// Create skybox
+	skybox := NewSkybox("skybox2", "skybox.shader")
 
 	for !window.ShouldClose() {
-		// Calculate deltatime
-		time := glfw.GetTime()
-		deltatime := time - previousTime
-		previousTime = time
-
 		// Update:
 		cam.Inputs(window)
+		camPos := cam.GetPosition()
 
-		t += deltatime
+		// Send the world position, direction, projection matrix and view matrix of the camera
+		// as well as the position of the light to the atmosphere shader:
+		camDir := cam.GetOrientation()
+		atmosphere.shader.bind()
+		atmosphere.shader.setUniform3f("camDir", camDir.X(), camDir.Y(), camDir.Z())
+		atmosphere.shader.setUniform3f("camPos", camPos.X(), camPos.Y(), camPos.Z())
+		atmosphere.shader.setUniformMat4fv("viewMatrix", cam.ViewMatrix())
+		atmosphere.shader.setUniformMat4fv("projMatrix", cam.ProjMatrix())
+
+		// Send planet properties to post processing shader:
+		var planetOrigin mgl32.Vec3 = p2.position
+		var atmosphereScale float32 = 1.3
+		var planetRadius float32 = 1.0
+		atmosphere.shader.setUniform3f("planetOrigin", planetOrigin.X(), planetOrigin.Y(), planetOrigin.Z())
+		atmosphere.shader.setUniform1f("planetRadius", planetRadius)
+		atmosphere.shader.setUniform1f("atmosphereScale", atmosphereScale)
+
+		// Bind the framebuffer for postprocessing before drawing:
+		atmosphere.fb.bind()
 
 		// Draw:
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+		gl.Enable(gl.DEPTH_TEST)
+		gl.Enable(gl.CULL_FACE)
 
-		sphere.shader.bind()
-		sphere.shader.setUniform3f("lightPos", float32(math.Cos(t)*5.0), 0.0, float32(math.Sin(t)*5.0))
+		sun.Draw()
 
-		sphere.draw()
+		// Draw the skybox LAST
+		skybox.draw()
+
+		// Disable depth testing and apply post processing:
+		gl.Disable(gl.DEPTH_TEST)
+		atmosphere.fb.unbind()
+		atmosphere.draw()
 
 		// Maintenance
 		window.SwapBuffers()

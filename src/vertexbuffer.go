@@ -13,6 +13,7 @@ func NewVertexBuffer(vertices []float32) VertexBuffer {
 	gl.GenBuffers(1, &id)
 	vb := VertexBuffer{id}
 	vb.bind()
+	// Calculate and set size of buffer
 	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*4, gl.Ptr(vertices), gl.STATIC_DRAW)
 	vb.unbind()
 
