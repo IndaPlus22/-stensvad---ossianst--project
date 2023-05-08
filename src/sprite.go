@@ -6,10 +6,6 @@ import (
 )
 
 type Sprite struct {
-	position mgl32.Vec3
-	rotation mgl32.Vec3
-	scale    float32
-
 	texture   Texture
 	normalMap Texture
 
@@ -20,11 +16,28 @@ type Sprite struct {
 	va VertexArray
 }
 
-func NewSprite(vertices []float32, indices []uint32, texturePath, normalMapPath, shaderPath string) Sprite {
+/*
+NewSprite generates a new sprite model object
+
+Parameters:
+- vertices: sprite vertices
+- indices: sprite indices
+- texturePath: path to texture file from "textures" folder
+- normalMapPath: path to normalmap file from "textures" folder
+- shaderPath: path to shader file map from "shaders" folder
+- textureScale: How often the texture wraps the model surface
+- normalMapScale: How often the normal map wraps the model surface
+
+Returns:
+- s: the new sprite object
+
+Example usage:
+
+	vertices, indices := GenPlanet(DefaultEarth)
+	s := NewSprite(vertices, indices, "spots.png", "normalmap_rocky.png", "planet.shader", 1.0, 2.0)
+*/
+func NewSprite(vertices []float32, indices []uint32, texturePath, normalMapPath, shaderPath string, textureScale, normalMapScale float32) Sprite {
 	s := Sprite{
-		mgl32.Vec3{0, 0, 0},
-		mgl32.Vec3{0, 0, 0},
-		1.0,
 		NewTexture(texturePath),
 		NewTexture(normalMapPath),
 		NewShader(shaderPath),
@@ -33,56 +46,52 @@ func NewSprite(vertices []float32, indices []uint32, texturePath, normalMapPath,
 		VertexArray{0},
 	}
 
+	// Generate index buffer and vertex array
+	s.vb = NewVertexBuffer(vertices)
+	s.ib = NewIndexBuffer(indices)
+
+	s.vb.bind()
+	s.va = NewVertexArray([]int{3, 3}) // A vertex contains a position(3 floats) and a normal(3 floats)
+
+	// Set constant uniforms once
 	s.shader.bind()
 
-	s.shader.setUniform3f("shoreColLow", 0.98, 0.9, 0.62)
-	s.shader.setUniform3f("shoreColHigh", 0.949, 0.794, 0.414)
-	s.shader.setUniform3f("flatColLow", 0.489, 0.617, 0)
-	s.shader.setUniform3f("flatColHigh", 0.261, 0.408, 0)
-	s.shader.setUniform3f("steepColLow", 0.421, 0.316, 0.237)
-	s.shader.setUniform3f("steepColHigh", 0.9, 0.9, 0.9)
-
 	s.shader.setUniform1i("mainTexture", 0)
-	s.shader.setUniform1i("normalMap", 2)
-	s.shader.setUniform1f("texScale", 1.0)
-	s.shader.setUniform1f("nmapScale", 4.0)
+	s.shader.setUniform1i("normalMap", 1)
+	s.shader.setUniform1f("texScale", textureScale)
+	s.shader.setUniform1f("nMapScale", normalMapScale)
 
+	s.shader.setUniform3f("lightPos", 0.0, 0.0, 0.0)
 	s.shader.setUniform3f("lightColor", 1.0, 1.0, 1.0)
 
 	s.shader.setUniformMat4fv("projection", cam.ProjMatrix())
 
 	s.shader.unbind()
 
-	s.updateMesh(vertices, indices)
-
 	return s
 }
 
-func (s *Sprite) updateMesh(vertices []float32, indices []uint32) {
-	s.vb = NewVertexBuffer(vertices)
-	s.ib = NewIndexBuffer(indices)
+func (s *Sprite) draw(position, rotation mgl32.Vec3, scale float32) {
+	// Calculate model matrix as sprites transformation
+	model := mgl32.Translate3D(position.X(), position.Y(), position.Z())
+	model = model.Mul4(mgl32.HomogRotate3D(float32(rotation.X()), mgl32.Vec3{1, 0, 0}))
+	model = model.Mul4(mgl32.HomogRotate3D(float32(rotation.Y()), mgl32.Vec3{0, 1, 0}))
+	model = model.Mul4(mgl32.HomogRotate3D(float32(rotation.Z()), mgl32.Vec3{0, 0, 1}))
+	model = model.Mul4(mgl32.Scale3D(scale, scale, scale))
 
-	s.vb.bind()
-	s.va = NewVertexArray([]int{3, 3})
-}
-
-func (s *Sprite) draw() {
-	model := mgl32.Translate3D(s.position.X(), s.position.Y(), s.position.Z())
-	model = model.Mul4(mgl32.HomogRotate3D(float32(s.rotation.X()), mgl32.Vec3{1, 0, 0}))
-	model = model.Mul4(mgl32.HomogRotate3D(float32(s.rotation.Y()), mgl32.Vec3{0, 1, 0}))
-	model = model.Mul4(mgl32.HomogRotate3D(float32(s.rotation.Z()), mgl32.Vec3{0, 0, 1}))
-	model = model.Mul4(mgl32.Scale3D(s.scale, s.scale, s.scale))
-
+	// Get view matrix from camera
 	view := cam.ViewMatrix()
+
+	// Projection matrix is already set as it does not change
 
 	s.shader.bind()
 	s.texture.bind(0)
-	s.normalMap.bind(2)
+	s.normalMap.bind(1)
 
 	s.shader.setUniformMat4fv("model", model)
 	s.shader.setUniformMat4fv("view", view)
 
-	//s.shader.setUniform3f("lightPos", 5.0, 1.0, 1.0)
+	s.shader.setUniform3f("camPos", cam.GetPosition().X(), cam.GetPosition().Y(), cam.GetPosition().Z())
 
 	s.va.bind()
 	s.ib.bind()
