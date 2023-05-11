@@ -32,6 +32,7 @@ in vec3 FragPos;
 
 layout(location = 0) out vec4 FragColor;
 layout(location = 1) out vec4 DepthColor;
+layout(location = 2) out vec4 sunBloom;
 
 // Textures
 uniform sampler2D mainTexture;
@@ -68,4 +69,5 @@ void main() {
 
     FragColor = vec4(texColor, 1.0);
     DepthColor.r = length(FragPos - camPos) / (camFar - camNear);
+    sunBloom = vec4(1.0);
 }

@@ -56,12 +56,14 @@ func NewPostProcessingFrame(w uint32, h uint32, shaderPath string) PostProcessin
 	fb := NewFrameBuffer(w, h)
 	fb.addColorTexture(2, w, h, gl.COLOR_ATTACHMENT0, gl.RGBA)
 	fb.addColorTexture(3, w, h, gl.COLOR_ATTACHMENT1, gl.RGBA32F)
+	fb.addColorTexture(5, w, h, gl.COLOR_ATTACHMENT2, gl.RGBA)
 	fb.addDepthTexture(10, w, h)
 
 	ppf := PostProcessingFrame{va, fb, ib, []uint32{}, shader}
 	ppf.shader.bind()
 	ppf.shader.setUniform1i("colorTexture", 2)
 	ppf.shader.setUniform1i("depthTexture", 3)
+	ppf.shader.setUniform1i("sunBloom", 5)
 	ppf.shader.setUniform1f("camNear", cam.GetNearPlane())
 	ppf.shader.setUniform1f("camFar", cam.GetFarPlane())
 
