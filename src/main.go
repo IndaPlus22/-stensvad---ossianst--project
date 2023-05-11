@@ -16,6 +16,7 @@ var windowWidth = 800 * 2
 var windowHeight = 600 * 2
 
 var cam = NewCamera(windowWidth, windowHeight, mgl32.Vec3{0.0, 0.0, 5.0})
+var planets = []*Planet{}
 
 func init() {
 	// GLFW event handling must run on the main OS thread
@@ -56,27 +57,21 @@ func main() {
 	gl.ClearColor(0.34, 0.32, 0.45, 1.0)
 
 	// Create planets
-	planets := []*Planet{}
-
 	earthSettings := DefaultEarth()
 	moonSettings := DefaultMoon()
 
 	sun := NewPlanet(DefaultSun())
-	planets = append(planets, &sun)
 
 	earthSettings.shape.radius = 1.5
 	p1 := NewPlanet(earthSettings)
-	planets = append(planets, &p1)
 
 	earthSettings.shape.radius = 1.0
 	earthSettings.colors = RandomColors()
 	p2 := NewPlanet(earthSettings)
-	planets = append(planets, &p2)
 
 	earthSettings.shape.radius = 0.75
 	earthSettings.colors = RandomColors()
 	p3 := NewPlanet(earthSettings)
-	planets = append(planets, &p3)
 
 	moonSettings.shape.radius = 0.75
 	m1 := NewPlanet(moonSettings)
@@ -90,13 +85,13 @@ func main() {
 	m3 := NewPlanet(moonSettings)
 
 	// Set orbits of planets
-	p1.addOrbital(&m1, 6.0, mgl32.Vec3{0.0, 1.0, 0.1}, -1.25)
-	p1.addOrbital(&m2, 5.0, mgl32.Vec3{0.5, 1.0, 0.0}, 1.5)
-	p2.addOrbital(&m3, 4.0, mgl32.Vec3{0.0, 1.0, 0.2}, -1.75)
+	p1.addOrbital(m1, 6.0, mgl32.Vec3{0.0, 1.0, 0.1}, -1.25)
+	p1.addOrbital(m2, 5.0, mgl32.Vec3{0.5, 1.0, 0.0}, 1.5)
+	p2.addOrbital(m3, 4.0, mgl32.Vec3{0.0, 1.0, 0.2}, -1.75)
 
-	sun.addOrbital(&p1, 12.0, mgl32.Vec3{0.1, 1.0, 0.1}, 0.75)
-	sun.addOrbital(&p2, 18.0, mgl32.Vec3{0.2, 1.0, 0.0}, -1.1)
-	sun.addOrbital(&p3, 21.0, mgl32.Vec3{0.0, 1.0, 0.3}, 1.25)
+	sun.addOrbital(p1, 12.0, mgl32.Vec3{0.1, 1.0, 0.1}, 0.75)
+	sun.addOrbital(p2, 18.0, mgl32.Vec3{0.2, 1.0, 0.0}, -1.1)
+	sun.addOrbital(p3, 21.0, mgl32.Vec3{0.0, 1.0, 0.3}, 1.25)
 
 	// Create atmospheres
 	// Send planet positions to uniform buffer
@@ -131,8 +126,8 @@ func main() {
 
 		// Send planet properties to post processing shader:
 		for i := range planetPositions {
-			p := planets[i]
-			planetPositions[i] = mgl32.Vec4{p.position.X(), p.position.Y(), p.position.Z(), p.scale}
+			p := planets[i].position
+			planetPositions[i] = mgl32.Vec4{p.X(), p.Y(), p.Z(), planets[i].scale}
 		}
 
 		atmosphere.updateUniformBufferVec4(atmosphere.ub[0], planetPositions)

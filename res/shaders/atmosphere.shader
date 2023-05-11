@@ -35,7 +35,7 @@ layout(std140) uniform PlanetPositions {
     vec4 planetPositions[10];
 };
 
-float atmosphereScale = 1.5;
+float atmosphereScale = 0.5;
 
 // The solution for atmosphere scattering is based on Sebastian Lagues implementation
 // in this video on YouTube: https://www.youtube.com/watch?v=DxfEbulyFcY
@@ -68,7 +68,7 @@ vec2 raySphereIntersection(vec3 rayPosition, vec3 rayDirection, vec3 sphereOrigi
 // TODO: Städa, gör mer readable, skriv kommentarer, ta bort onödig boilerplate
 float densityAtPoint(vec3 point, vec4 planetData) {
     float heightAboveSurface = length(point - planetData.xyz) - planetData.w;
-    float height01 = heightAboveSurface / (planetData.w * atmosphereScale - planetData.w);
+    float height01 = heightAboveSurface / (planetData.w + atmosphereScale - planetData.w);
     float localDensity = exp(-height01) * (1 - height01);
 
     return localDensity;
@@ -100,7 +100,7 @@ vec3 scattering(vec3 rayOrigin, vec3 rayDir, float rayLength, vec3 originalColor
 
     for (int i = 0; i < scatteringPoints; i++) {
         vec3 sunDir = lightPos - scatteringPoint;
-        vec2 sunRayLength = raySphereIntersection(scatteringPoint, sunDir, planetData.xyz, planetData.w * atmosphereScale);
+        vec2 sunRayLength = raySphereIntersection(scatteringPoint, sunDir, planetData.xyz, planetData.w + atmosphereScale);
         float sunRayOpticalDepth = opticalDepth(scatteringPoint, sunDir, sunRayLength.y, planetData);
         viewRayOpticalDepth = opticalDepth(scatteringPoint, -rayDir, stepSize * i, planetData);
         
@@ -129,7 +129,7 @@ void main() {
 
     for (int i = 0; i < 10; i++) {
         vec3 fragRay = normalize(worldCoord.xyz - camPos);
-        vec2 intersection = raySphereIntersection(worldCoord.xyz, fragRay, planetPositions[i].xyz, planetPositions[i].w * atmosphereScale);
+        vec2 intersection = raySphereIntersection(worldCoord.xyz, fragRay, planetPositions[i].xyz, planetPositions[i].w + atmosphereScale);
 
         float distToAtmosphere = intersection.x;
         float distThroughAtmosphere = min(intersection.y, depth - distToAtmosphere);
