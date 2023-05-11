@@ -114,6 +114,11 @@ vec3 scattering(vec3 rayOrigin, vec3 rayDir, float rayLength, vec3 originalColor
     return originalColor * originalColorTransmittance + totalScattering;
 }
 
+float linearizeDepth(float depth,float camNear,float camFar) {
+    float z_n = 2.0 * depth - 1.0;
+    return 2.0 * camNear * camFar / (camFar + camNear - z_n * (camFar - camNear));
+}
+
 void main() {
     // Get the base color from the color texture
     vec4 finalColor = texture(colorTexture, texCoords);
@@ -124,15 +129,26 @@ void main() {
     vec4 worldCoord = inverseViewProjMatrix * clipCoord;
     worldCoord /= worldCoord.w;
 
-    // Get linear depth from depth texture
     float depth = texture(depthTexture, texCoords).r * (camFar - camNear);
 
     for (int i = 0; i < 10; i++) {
         vec3 fragRay = normalize(worldCoord.xyz - camPos);
+
+        vec2 oceanIntersection = raySphereIntersection(worldCoord.xyz, fragRay, planetPositions[i].xyz, planetPositions[i].w);
+        float distToOcean = oceanIntersection.x;
+        float distThroughOcean = oceanIntersection.y;
+        float oceanViewDepth = min(distThroughOcean, depth - distToOcean);
+
+        if (oceanViewDepth > 0.0) {
+            finalColor = vec4(0.31, 0.25, 0.71, 0.5);
+        }
+
+        float distToSurface = min(distToOcean, depth);
+
         vec2 intersection = raySphereIntersection(worldCoord.xyz, fragRay, planetPositions[i].xyz, planetPositions[i].w + atmosphereScale);
 
         float distToAtmosphere = intersection.x;
-        float distThroughAtmosphere = min(intersection.y, depth - distToAtmosphere);
+        float distThroughAtmosphere = min(intersection.y, distToSurface - distToAtmosphere);
 
         if (distThroughAtmosphere > 0.0) {
             vec3 point = worldCoord.xyz + fragRay * (distToAtmosphere);

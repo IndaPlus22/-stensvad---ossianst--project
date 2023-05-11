@@ -52,6 +52,9 @@ uniform float texScale;
 uniform float nMapScale;
 
 uniform vec3 camPos;
+uniform float camFar;
+uniform float camNear;
+
 uniform vec3 lightPos;
 uniform vec3 lightColor;
 
@@ -177,6 +180,6 @@ void main() {
 
     FragColor = vec4(texColor * heightColor * phong * lightColor, 1.0);
 
-    DepthColor.r = length(FragPos - camPos) / (99.9);
+    DepthColor.r = length(FragPos - camPos) / camFar;
     //FragColor = vec4(lightingNormal, 1.0);
 }

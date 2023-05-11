@@ -62,14 +62,14 @@ func main() {
 
 	sun := NewPlanet(DefaultSun())
 
-	earthSettings.shape.radius = 1.5
+	earthSettings.shape.radius = 1.0
 	p1 := NewPlanet(earthSettings)
 
 	earthSettings.shape.radius = 1.0
 	earthSettings.colors = RandomColors()
 	p2 := NewPlanet(earthSettings)
 
-	earthSettings.shape.radius = 0.75
+	earthSettings.shape.radius = 1.0
 	earthSettings.colors = RandomColors()
 	p3 := NewPlanet(earthSettings)
 
