@@ -5,6 +5,7 @@ import (
 	_ "image/png"
 	"log"
 	"runtime"
+	"unsafe"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
@@ -15,6 +16,7 @@ var windowWidth = 800 * 2
 var windowHeight = 600 * 2
 
 var cam = NewCamera(windowWidth, windowHeight, mgl32.Vec3{0.0, 0.0, 5.0})
+var planets = []*Planet{}
 
 func init() {
 	// GLFW event handling must run on the main OS thread
@@ -50,6 +52,7 @@ func main() {
 
 	// Configure global settings
 	gl.Enable(gl.DEPTH_TEST)
+	gl.Enable(gl.CULL_FACE)
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(0.34, 0.32, 0.45, 1.0)
 
@@ -82,16 +85,26 @@ func main() {
 	m3 := NewPlanet(moonSettings)
 
 	// Set orbits of planets
-	p1.addOrbital(&m1, 6.0, mgl32.Vec3{0.0, 1.0, 0.1}, -1.25)
-	p1.addOrbital(&m2, 5.0, mgl32.Vec3{0.5, 1.0, 0.0}, 1.5)
-	p2.addOrbital(&m3, 4.0, mgl32.Vec3{0.0, 1.0, 0.2}, -1.75)
+	p1.addOrbital(m1, 6.0, mgl32.Vec3{0.0, 1.0, 0.1}, -1.25)
+	p1.addOrbital(m2, 5.0, mgl32.Vec3{0.5, 1.0, 0.0}, 1.5)
+	p2.addOrbital(m3, 4.0, mgl32.Vec3{0.0, 1.0, 0.2}, -1.75)
 
-	sun.addOrbital(&p1, 12.0, mgl32.Vec3{0.1, 1.0, 0.1}, 0.75)
-	sun.addOrbital(&p2, 18.0, mgl32.Vec3{0.2, 1.0, 0.0}, -1.1)
-	sun.addOrbital(&p3, 21.0, mgl32.Vec3{0.0, 1.0, 0.3}, 1.25)
+	sun.addOrbital(p1, 12.0, mgl32.Vec3{0.1, 1.0, 0.1}, 0.75)
+	sun.addOrbital(p2, 18.0, mgl32.Vec3{0.2, 1.0, 0.0}, -1.1)
+	sun.addOrbital(p3, 21.0, mgl32.Vec3{0.0, 1.0, 0.3}, 1.25)
 
-	// Create atmosphere
+	// Create atmospheres
+	// Send planet positions to uniform buffer
+	planetPositions := []mgl32.Vec4{}
+	for _, planet := range planets {
+		// First three are planet coordinates, fourth is planet scale
+		if planet.hasAtmosphere {
+			p := planet.position
+			planetPositions = append(planetPositions, mgl32.Vec4{p.X(), p.Y(), p.Z(), planet.scale})
+		}
+	}
 	atmosphere := NewPostProcessingFrame(uint32(fbWidth), uint32(fbHeight), "atmosphere.shader")
+	atmosphere.addUniformBufferVec4("PlanetPositions", planetPositions, int(unsafe.Sizeof(mgl32.Vec4{})*10))
 
 	// Create skybox
 	skybox := NewSkybox("skybox2", "skybox.shader")
@@ -107,16 +120,17 @@ func main() {
 		atmosphere.shader.bind()
 		atmosphere.shader.setUniform3f("camDir", camDir.X(), camDir.Y(), camDir.Z())
 		atmosphere.shader.setUniform3f("camPos", camPos.X(), camPos.Y(), camPos.Z())
+		atmosphere.shader.setUniform3f("lightPos", sun.position.X(), sun.position.Y(), sun.position.Z())
 		atmosphere.shader.setUniformMat4fv("viewMatrix", cam.ViewMatrix())
 		atmosphere.shader.setUniformMat4fv("projMatrix", cam.ProjMatrix())
 
 		// Send planet properties to post processing shader:
-		var planetOrigin mgl32.Vec3 = p2.position
-		var atmosphereScale float32 = 1.3
-		var planetRadius float32 = 1.0
-		atmosphere.shader.setUniform3f("planetOrigin", planetOrigin.X(), planetOrigin.Y(), planetOrigin.Z())
-		atmosphere.shader.setUniform1f("planetRadius", planetRadius)
-		atmosphere.shader.setUniform1f("atmosphereScale", atmosphereScale)
+		for i := range planetPositions {
+			p := planets[i].position
+			planetPositions[i] = mgl32.Vec4{p.X(), p.Y(), p.Z(), planets[i].scale}
+		}
+
+		atmosphere.updateUniformBufferVec4(atmosphere.ub[0], planetPositions)
 
 		// Bind the framebuffer for postprocessing before drawing:
 		atmosphere.fb.bind()
@@ -124,7 +138,6 @@ func main() {
 		// Draw:
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		gl.Enable(gl.DEPTH_TEST)
-		gl.Enable(gl.CULL_FACE)
 
 		sun.Draw()
 

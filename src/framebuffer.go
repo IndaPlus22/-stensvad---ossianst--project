@@ -8,17 +8,19 @@ type FrameBuffer struct {
 	id     uint32
 	width  uint32
 	height uint32
+
+	m_DrawBuffers []uint32
 }
 
 func NewFrameBuffer(w uint32, h uint32) FrameBuffer {
 	var id uint32
 	gl.GenFramebuffers(1, &id)
-	fb := FrameBuffer{id, w, h}
+	fb := FrameBuffer{id, w, h, []uint32{}}
 
 	return fb
 }
 
-func (fb *FrameBuffer) addColorTexture(slot uint32, texWidth uint32, texHeight uint32, colorAttachment uint32) {
+/*func (fb *FrameBuffer) addColorTexture(slot uint32, texWidth uint32, texHeight uint32, colorAttachment uint32) {
 	// Create new texture
 	var tex uint32
 	gl.GenTextures(1, &tex)
@@ -37,6 +39,31 @@ func (fb *FrameBuffer) addColorTexture(slot uint32, texWidth uint32, texHeight u
 
 	fb.bind()
 	gl.FramebufferTexture2D(gl.FRAMEBUFFER, colorAttachment, gl.TEXTURE_2D, tex, 0)
+	fb.unbind()
+}*/
+
+func (fb *FrameBuffer) addColorTexture(slot uint32, texWidth uint32, texHeight uint32, colorAttachment uint32, pixelSize int32) {
+	// Create new texture
+	var tex uint32
+	gl.GenTextures(1, &tex)
+
+	// Bind texture to "slot"
+	gl.ActiveTexture(gl.TEXTURE0 + slot)
+	gl.BindTexture(gl.TEXTURE_2D, tex)
+
+	// Texture paramaters
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+
+	gl.TexImage2D(gl.TEXTURE_2D, 0, pixelSize, int32(texWidth), int32(texHeight), 0, gl.RGBA, gl.UNSIGNED_BYTE, nil)
+
+	fb.bind()
+	gl.FramebufferTexture2D(gl.FRAMEBUFFER, colorAttachment, gl.TEXTURE_2D, tex, 0)
+
+	fb.m_DrawBuffers = append(fb.m_DrawBuffers, colorAttachment)
+	gl.DrawBuffers(int32(len(fb.m_DrawBuffers)), &fb.m_DrawBuffers[0])
 	fb.unbind()
 }
 

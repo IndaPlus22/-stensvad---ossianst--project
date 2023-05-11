@@ -14,6 +14,8 @@ type Planet struct {
 	axisAroundParent mgl32.Vec3
 	orbital          []*Planet
 	orbitTime        float64
+
+	hasAtmosphere bool
 }
 
 /*
@@ -30,7 +32,7 @@ Example usage:
 	earthSettings := DefaultEarth()
 	planet := NewPlanet(earthSettings)
 */
-func NewPlanet(settings PlanetSettings) Planet {
+func NewPlanet(settings PlanetSettings) *Planet {
 	// Generate the planet sprite model
 	planetVertices, planetIndices := GenPlanet(settings.shape)
 
@@ -44,7 +46,7 @@ func NewPlanet(settings PlanetSettings) Planet {
 		settings.normalMapScale,
 	)
 
-	p := Planet{
+	p := &Planet{
 		sprite,
 
 		mgl32.Vec3{0.0, 0.0, 0.0},
@@ -54,9 +56,11 @@ func NewPlanet(settings PlanetSettings) Planet {
 		mgl32.Vec3{},
 		nil,
 		0,
+		settings.hasAtmosphere,
 	}
 
 	p.setColors(settings.colors)
+	planets = append(planets, p)
 
 	return p
 }

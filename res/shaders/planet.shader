@@ -33,7 +33,9 @@ in vec3 FragPos;
 in vec3 Normal;
 in mat4 Model;
 
-out vec4 FragColor;
+layout(location = 0) out vec4 FragColor;
+layout(location = 1) out vec4 DepthColor;
+
 
 // Colors
 uniform vec3 shoreColLow;
@@ -175,5 +177,6 @@ void main() {
 
     FragColor = vec4(texColor * heightColor * phong * lightColor, 1.0);
 
+    DepthColor.r = length(FragPos - camPos) / (99.9);
     //FragColor = vec4(lightingNormal, 1.0);
 }
