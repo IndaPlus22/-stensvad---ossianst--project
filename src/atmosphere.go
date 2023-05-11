@@ -1,7 +1,10 @@
 package main
 
 import (
+	"unsafe"
+
 	"github.com/go-gl/gl/v4.1-core/gl"
+	"github.com/go-gl/mathgl/mgl32"
 )
 
 type PostProcessingFrame struct {
@@ -9,6 +12,7 @@ type PostProcessingFrame struct {
 	fb FrameBuffer
 
 	ib IndexBuffer
+	ub []uint32
 
 	shader Shader
 }
@@ -49,14 +53,36 @@ func NewPostProcessingFrame(w uint32, h uint32, shaderPath string) PostProcessin
 	//rb := NewRenderBuffer(w, h)
 	//fb.addRenderBuffer(rb.id)
 
-	ppf := PostProcessingFrame{va, fb, ib, shader}
+	ppf := PostProcessingFrame{va, fb, ib, []uint32{}, shader}
 	ppf.shader.bind()
 	ppf.shader.setUniform1i("colorTexture", 2)
 	ppf.shader.setUniform1i("depthTexture", 3)
-	ppf.shader.setUniform1f("near", cam.GetNearPlane())
-	ppf.shader.setUniform1f("far", cam.GetFarPlane())
+	ppf.shader.setUniform1f("camNear", cam.GetNearPlane())
+	ppf.shader.setUniform1f("camFar", cam.GetFarPlane())
 
 	return ppf
+}
+
+func (ppf *PostProcessingFrame) addUniformBufferVec3(block string, vectors []mgl32.Vec4) {
+	var id uint32
+	gl.GenBuffers(1, &id)
+	gl.BindBuffer(gl.UNIFORM_BUFFER, id)
+	// potentiellt fel
+	gl.BufferData(gl.UNIFORM_BUFFER, int(unsafe.Sizeof(mgl32.Vec4{})*3), nil, gl.DYNAMIC_DRAW)
+	// potentiellt fel
+	gl.BufferSubData(gl.UNIFORM_BUFFER, 0, int(unsafe.Sizeof(mgl32.Vec4{}))*len(vectors), unsafe.Pointer(&vectors[0]))
+	// potentiellt fel
+	blockId := gl.GetUniformBlockIndex(ppf.shader.id, gl.Str(block+"\x00"))
+	gl.UniformBlockBinding(ppf.shader.id, blockId, 0)
+	gl.BindBufferBase(gl.UNIFORM_BUFFER, 0, id)
+	ppf.ub = append(ppf.ub, id)
+}
+
+func (ppf *PostProcessingFrame) updateUB(vectors []mgl32.Vec4) {
+	for _, ubo := range ppf.ub {
+		gl.BindBuffer(gl.UNIFORM_BUFFER, ubo)
+		gl.BufferSubData(gl.UNIFORM_BUFFER, 0, int(unsafe.Sizeof(mgl32.Vec4{}))*len(vectors), unsafe.Pointer(&vectors[0]))
+	}
 }
 
 // Bind necessary buffers and shader programs and render the post processing effects.

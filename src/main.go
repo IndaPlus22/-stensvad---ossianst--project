@@ -54,6 +54,8 @@ func main() {
 	gl.ClearColor(0.34, 0.32, 0.45, 1.0)
 
 	// Create planets
+	planets := []*Planet{}
+
 	earthSettings := DefaultEarth()
 	moonSettings := DefaultMoon()
 
@@ -61,14 +63,17 @@ func main() {
 
 	earthSettings.shape.radius = 1.5
 	p1 := NewPlanet(earthSettings)
+	planets = append(planets, &p1)
 
 	earthSettings.shape.radius = 1.0
 	earthSettings.colors = RandomColors()
 	p2 := NewPlanet(earthSettings)
+	planets = append(planets, &p2)
 
 	earthSettings.shape.radius = 0.75
 	earthSettings.colors = RandomColors()
 	p3 := NewPlanet(earthSettings)
+	planets = append(planets, &p3)
 
 	moonSettings.shape.radius = 0.75
 	m1 := NewPlanet(moonSettings)
@@ -90,8 +95,15 @@ func main() {
 	sun.addOrbital(&p2, 18.0, mgl32.Vec3{0.2, 1.0, 0.0}, -1.1)
 	sun.addOrbital(&p3, 21.0, mgl32.Vec3{0.0, 1.0, 0.3}, 1.25)
 
-	// Create atmosphere
+	// Create atmospheres
+	// Send planet positions to uniform buffer
+	planetPositions := []mgl32.Vec4{}
+	for _, planet := range planets {
+		// First three are planet coordinates, fourth is planet scale
+		planetPositions = append(planetPositions, mgl32.Vec4{planet.position.X(), planet.position.Y(), planet.position.Z(), planet.scale})
+	}
 	atmosphere := NewPostProcessingFrame(uint32(fbWidth), uint32(fbHeight), "atmosphere.shader")
+	atmosphere.addUniformBufferVec3("PlanetPositions", planetPositions)
 
 	// Create skybox
 	skybox := NewSkybox("skybox2", "skybox.shader")
@@ -107,16 +119,16 @@ func main() {
 		atmosphere.shader.bind()
 		atmosphere.shader.setUniform3f("camDir", camDir.X(), camDir.Y(), camDir.Z())
 		atmosphere.shader.setUniform3f("camPos", camPos.X(), camPos.Y(), camPos.Z())
+		atmosphere.shader.setUniform3f("lightPos", sun.position.X(), sun.position.Y(), sun.position.Z())
 		atmosphere.shader.setUniformMat4fv("viewMatrix", cam.ViewMatrix())
 		atmosphere.shader.setUniformMat4fv("projMatrix", cam.ProjMatrix())
 
 		// Send planet properties to post processing shader:
-		var planetOrigin mgl32.Vec3 = p2.position
-		var atmosphereScale float32 = 1.3
-		var planetRadius float32 = 1.0
-		atmosphere.shader.setUniform3f("planetOrigin", planetOrigin.X(), planetOrigin.Y(), planetOrigin.Z())
-		atmosphere.shader.setUniform1f("planetRadius", planetRadius)
-		atmosphere.shader.setUniform1f("atmosphereScale", atmosphereScale)
+		atmosphere.updateUB(planetPositions)
+		for i := range planetPositions {
+			p := planets[i]
+			planetPositions[i] = mgl32.Vec4{p.position.X(), p.position.Y(), p.position.Z(), p.scale}
+		}
 
 		// Bind the framebuffer for postprocessing before drawing:
 		atmosphere.fb.bind()
