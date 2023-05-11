@@ -14,6 +14,8 @@ type Planet struct {
 	axisAroundParent mgl32.Vec3
 	orbital          []*Planet
 	orbitTime        float64
+
+	hasAtmosphere bool
 }
 
 /*
@@ -54,6 +56,7 @@ func NewPlanet(settings PlanetSettings) Planet {
 		mgl32.Vec3{},
 		nil,
 		0,
+		settings.hasAtmosphere,
 	}
 
 	p.setColors(settings.colors)

@@ -5,6 +5,7 @@ import (
 	_ "image/png"
 	"log"
 	"runtime"
+	"unsafe"
 
 	"github.com/go-gl/gl/v4.1-core/gl"
 	"github.com/go-gl/glfw/v3.3/glfw"
@@ -50,6 +51,7 @@ func main() {
 
 	// Configure global settings
 	gl.Enable(gl.DEPTH_TEST)
+	gl.Enable(gl.CULL_FACE)
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(0.34, 0.32, 0.45, 1.0)
 
@@ -60,6 +62,7 @@ func main() {
 	moonSettings := DefaultMoon()
 
 	sun := NewPlanet(DefaultSun())
+	planets = append(planets, &sun)
 
 	earthSettings.shape.radius = 1.5
 	p1 := NewPlanet(earthSettings)
@@ -100,10 +103,13 @@ func main() {
 	planetPositions := []mgl32.Vec4{}
 	for _, planet := range planets {
 		// First three are planet coordinates, fourth is planet scale
-		planetPositions = append(planetPositions, mgl32.Vec4{planet.position.X(), planet.position.Y(), planet.position.Z(), planet.scale})
+		if planet.hasAtmosphere {
+			p := planet.position
+			planetPositions = append(planetPositions, mgl32.Vec4{p.X(), p.Y(), p.Z(), planet.scale})
+		}
 	}
 	atmosphere := NewPostProcessingFrame(uint32(fbWidth), uint32(fbHeight), "atmosphere.shader")
-	atmosphere.addUniformBufferVec3("PlanetPositions", planetPositions)
+	atmosphere.addUniformBufferVec4("PlanetPositions", planetPositions, int(unsafe.Sizeof(mgl32.Vec4{})*10))
 
 	// Create skybox
 	skybox := NewSkybox("skybox2", "skybox.shader")
@@ -124,11 +130,12 @@ func main() {
 		atmosphere.shader.setUniformMat4fv("projMatrix", cam.ProjMatrix())
 
 		// Send planet properties to post processing shader:
-		atmosphere.updateUB(planetPositions)
 		for i := range planetPositions {
 			p := planets[i]
 			planetPositions[i] = mgl32.Vec4{p.position.X(), p.position.Y(), p.position.Z(), p.scale}
 		}
+
+		atmosphere.updateUniformBufferVec4(atmosphere.ub[0], planetPositions)
 
 		// Bind the framebuffer for postprocessing before drawing:
 		atmosphere.fb.bind()
@@ -136,7 +143,6 @@ func main() {
 		// Draw:
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 		gl.Enable(gl.DEPTH_TEST)
-		gl.Enable(gl.CULL_FACE)
 
 		sun.Draw()
 

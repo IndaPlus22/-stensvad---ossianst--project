@@ -32,7 +32,7 @@ uniform sampler2D colorTexture;
 uniform sampler2D depthTexture;
 
 layout(std140) uniform PlanetPositions {
-    vec4 planetPositions[3];
+    vec4 planetPositions[10];
 };
 
 float atmosphereScale = 1.5;
@@ -114,13 +114,6 @@ vec3 scattering(vec3 rayOrigin, vec3 rayDir, float rayLength, vec3 originalColor
     return originalColor * originalColorTransmittance + totalScattering;
 }
 
-float linearizeDepth(float depth,float near,float far)
-{
-    float z_n = 2.0 * depth - 1.0;
-    return 2.0 * near * far / (far + near - z_n * (far - near));
-}
-
-
 void main() {
     // Get the base color from the color texture
     vec4 finalColor = texture(colorTexture, texCoords);
@@ -132,17 +125,14 @@ void main() {
     worldCoord /= worldCoord.w;
 
     // Get linear depth from depth texture
-    float depth = texture(depthTexture, texCoords).r;
-    float linearDepth = linearizeDepth(depth, camNear, camFar);
+    float depth = texture(depthTexture, texCoords).r * (camFar - camNear);
 
-    //vec3 fragRay = normalize(worldCoord.xyz + (vec3(0.0) - camPos));
-    vec3 fragRay = normalize(worldCoord.xyz - camPos);
-
-    for (int i = 0; i < 3; i++) {
+    for (int i = 0; i < 10; i++) {
+        vec3 fragRay = normalize(worldCoord.xyz - camPos);
         vec2 intersection = raySphereIntersection(worldCoord.xyz, fragRay, planetPositions[i].xyz, planetPositions[i].w * atmosphereScale);
 
         float distToAtmosphere = intersection.x;
-        float distThroughAtmosphere = min(intersection.y, linearDepth - distToAtmosphere);
+        float distThroughAtmosphere = min(intersection.y, depth - distToAtmosphere);
 
         if (distThroughAtmosphere > 0.0) {
             vec3 point = worldCoord.xyz + fragRay * (distToAtmosphere);
