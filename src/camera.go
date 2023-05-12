@@ -59,7 +59,7 @@ func NewCamera(width int, height int, position mgl32.Vec3) Camera {
 
 		width, height,
 
-		0.05, 45.0, 0.01, 100,
+		0.05, 45.0, 0.01, 500,
 
 		0.1, -90, 0, 0, 0, 0.1, 0.0, 0.0}
 
