@@ -1,5 +1,8 @@
 # stensvad-ossianst-melvinbe-project
-## Planets! 🌎
+## Planet Generator 
+
+![Screenshot](docs/images/view.png)
+
 This project is a 3D renderer and planet generator made with [Go](https://go.dev/dl/ "Golang download") and [go.gl](https://github.com/go-gl/gl "go.gl page").
 
 ## Running the program
