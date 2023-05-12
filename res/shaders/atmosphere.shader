@@ -30,7 +30,8 @@ uniform mat4 projMatrix;
 
 uniform sampler2D colorTexture;
 uniform sampler2D depthTexture;
-uniform sampler2D sunBloom;
+
+uniform sampler2D oceanNormalMap;
 
 layout(std140) uniform PlanetPositions {
     vec4 planetPositions[10];
@@ -135,6 +136,34 @@ vec3 shine(vec3 rayOrigin, vec3 rayDir, float rayLength, vec3 originalColor, vec
     return originalColor * originalColorTransmittance + totalScattering * vec3(1.0, 0.7, 0.0);
 }
 
+// Maps normal map to six sides of the model
+vec3 triplanarNormal(vec3 pos, vec3 normal, sampler2D normalMap) {
+    float nMapScale = 2.0;
+
+    // Calculate tex coords for sampling in three directions
+    // fract ensures that all sampling is within [0.0, 1.0]
+    vec2 uvX = vec2(fract(pos.z * nMapScale), fract(pos.y * nMapScale));
+    vec2 uvY = vec2(fract(pos.x * nMapScale), fract(pos.z * nMapScale));
+    vec2 uvZ = vec2(fract(pos.x * nMapScale), fract(pos.y * nMapScale));
+
+    // Sample normalmap normals
+    // Also convert color range [0.0, 1.0] to normal range [-1.0, 1.0]
+    vec3 normalX = texture(normalMap, uvX).rgb * 2.0 - 1.0;
+    vec3 normalY = texture(normalMap, uvY).rgb * 2.0 - 1.0;
+    vec3 normalZ = texture(normalMap, uvZ).rgb * 2.0 - 1.0;
+
+    // Calculate normal in every direction
+    vec3 tnormalX = vec3(normalX.xy + normal.zy, normalX.z * normal.x);
+    vec3 tnormalY = vec3(normalY.xy + normal.xz, normalY.z * normal.y);
+    vec3 tnormalZ = vec3(normalZ.xy + normal.xy, normalZ.z * normal.z);
+
+    // Calculate how much every tangent normal will contribute to final normal
+    vec3 weight = vec3(pow(abs(normal.x), 1.5), pow(abs(normal.y), 1.5), pow(abs(normal.z), 1.5));
+    weight /= dot(weight, vec3(1.0));
+
+    return normalize(tnormalX.zyx * weight.x + tnormalY.xzy * weight.y + tnormalZ.xyz * weight.z);
+}
+
 void main() {
     // Get the base color from the color texture
     vec4 finalColor = texture(colorTexture, texCoords);
@@ -156,17 +185,19 @@ void main() {
 
         if (oceanViewDepth > 0.0 && i != 0) {
             vec3 fragPos = worldCoord.xyz + fragRay * distToOcean;
-            float diffuseLight = clamp(dot(fragPos, -fragPos), 0.0, 1.0);
+            vec3 normal = normalize(fragPos - planetPositions[i].xyz);
+            normal = triplanarNormal(normal * planetPositions[i].w, normal, oceanNormalMap);
+
+            float diffuseLight = clamp(dot(normal, -fragPos), 0.0, 0.7);
 
             vec3 lightToFrag = normalize(fragPos - planetPositions[0].xyz);
             vec3 camToFrag = normalize(fragPos - camPos);
-            vec3 normal = normalize(fragPos - planetPositions[i].xyz);
             vec3 reflection = reflect(lightToFrag, normal);
 
             float specularValue = clamp(dot(reflection, -camToFrag), 0.0, 1.0);
             float specularLight = pow(specularValue, 32) * 5;
 
-            finalColor = vec4(0.31, 0.25, 0.71, 0.5) * vec4(vec3(specularLight + diffuseLight + 0.1), 1.0);
+            finalColor = vec4(0.31, 0.25, 0.71, 0.5) * vec4(vec3(specularLight + diffuseLight + 0.3), 1.0);
         }
 
         vec2 intersection = raySphereIntersection(worldCoord.xyz, fragRay, planetPositions[i].xyz, planetPositions[i].w + atmosphereScale);
