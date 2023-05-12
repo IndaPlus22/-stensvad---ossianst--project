@@ -155,7 +155,18 @@ void main() {
         float oceanViewDepth = min(distThroughOcean, depth - distToOcean);
 
         if (oceanViewDepth > 0.0 && i != 0) {
-            finalColor = vec4(0.31, 0.25, 0.71, 0.5);
+            vec3 fragPos = worldCoord.xyz + fragRay * distToOcean;
+            float diffuseLight = clamp(dot(fragPos, -fragPos), 0.0, 1.0);
+
+            vec3 lightToFrag = normalize(fragPos - planetPositions[0].xyz);
+            vec3 camToFrag = normalize(fragPos - camPos);
+            vec3 normal = normalize(fragPos - planetPositions[i].xyz);
+            vec3 reflection = reflect(lightToFrag, normal);
+
+            float specularValue = clamp(dot(reflection, -camToFrag), 0.0, 1.0);
+            float specularLight = pow(specularValue, 32) * 5;
+
+            finalColor = vec4(0.31, 0.25, 0.71, 0.5) * vec4(vec3(specularLight + diffuseLight + 0.1), 1.0);
         }
 
         vec2 intersection = raySphereIntersection(worldCoord.xyz, fragRay, planetPositions[i].xyz, planetPositions[i].w + atmosphereScale);
