@@ -64,6 +64,9 @@ func NewSprite(vertices []float32, indices []uint32, texturePath, normalMapPath,
 	s.shader.setUniform3f("lightPos", 0.0, 0.0, 0.0)
 	s.shader.setUniform3f("lightColor", 1.0, 1.0, 1.0)
 
+	s.shader.setUniform1f("camFar", cam.farPlane)
+	s.shader.setUniform1f("camNear", cam.nearPlane)
+
 	s.shader.setUniformMat4fv("projection", cam.ProjMatrix())
 
 	s.shader.unbind()

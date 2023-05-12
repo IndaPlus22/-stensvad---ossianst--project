@@ -59,7 +59,7 @@ func NewCamera(width int, height int, position mgl32.Vec3) Camera {
 
 		width, height,
 
-		0.05, 45.0, 0.1, 100,
+		0.05, 45.0, 0.01, 500,
 
 		0.1, -90, 0, 0, 0, 0.1, 0.0, 0.0}
 
@@ -216,84 +216,18 @@ func (c *Camera) Inputs(window *glfw.Window) {
 	}
 
 	if window.GetKey(glfw.KeyM) == glfw.Press {
-		if window.GetKey(glfw.Key0) == glfw.Press {
-			c.timeFactor = 0
-		}
-
-		if window.GetKey(glfw.Key1) == glfw.Press {
-			c.timeFactor = -1
-		}
-
-		if window.GetKey(glfw.Key2) == glfw.Press {
-			c.timeFactor = -2
-		}
-
-		if window.GetKey(glfw.Key3) == glfw.Press {
-			c.timeFactor = -3
-		}
-
-		if window.GetKey(glfw.Key4) == glfw.Press {
-			c.timeFactor = -4
-		}
-
-		if window.GetKey(glfw.Key5) == glfw.Press {
-			c.timeFactor = -5
-		}
-
-		if window.GetKey(glfw.Key6) == glfw.Press {
-			c.timeFactor = -6
-		}
-
-		if window.GetKey(glfw.Key7) == glfw.Press {
-			c.timeFactor = -7
-		}
-
-		if window.GetKey(glfw.Key8) == glfw.Press {
-			c.timeFactor = -8
-		}
-
-		if window.GetKey(glfw.Key9) == glfw.Press {
-			c.timeFactor = -9
+		//Update the timefactor if a number key is pressed to the negative of the pressed number
+		for i := 0; i < 10; i++ {
+			if window.GetKey(glfw.Key0+glfw.Key(i)) == glfw.Press {
+				c.timeFactor = -float64(i)
+			}
 		}
 	} else {
-		if window.GetKey(glfw.Key0) == glfw.Press {
-			c.timeFactor = 0
-		}
-
-		if window.GetKey(glfw.Key1) == glfw.Press {
-			c.timeFactor = 1
-		}
-
-		if window.GetKey(glfw.Key2) == glfw.Press {
-			c.timeFactor = 2
-		}
-
-		if window.GetKey(glfw.Key3) == glfw.Press {
-			c.timeFactor = 3
-		}
-
-		if window.GetKey(glfw.Key4) == glfw.Press {
-			c.timeFactor = 4
-		}
-
-		if window.GetKey(glfw.Key5) == glfw.Press {
-			c.timeFactor = 5
-		}
-
-		if window.GetKey(glfw.Key6) == glfw.Press {
-			c.timeFactor = 6
-		}
-
-		if window.GetKey(glfw.Key7) == glfw.Press {
-			c.timeFactor = 7
-		}
-
-		if window.GetKey(glfw.Key8) == glfw.Press {
-			c.timeFactor = 8
-		}
-
-		if window.GetKey(glfw.Key9) == glfw.Press {
-			c.timeFactor = 9
+		//Update the timefactor if a number key is pressed to the pressed number
+		for i := 0; i < 10; i++ {
+			if window.GetKey(glfw.Key0+glfw.Key(i)) == glfw.Press {
+				c.timeFactor = float64(i)
+			}
 		}
 	}
 }

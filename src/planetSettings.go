@@ -65,7 +65,7 @@ func DefaultEarth() PlanetSettings {
 			// General:
 			1.0, // radius
 			200, // resolution
-			1.0, // amplitude
+			0.5, // amplitude
 			1.0, // frequency
 
 			// Ocean:
@@ -78,7 +78,7 @@ func DefaultEarth() PlanetSettings {
 			1.0,  // frequency
 
 			// Mountain:
-			1.5,  // amplitude
+			0.2,  // amplitude
 			0.75, // frequency
 			0.5,  // smoothness
 
@@ -179,10 +179,10 @@ func DefaultSun() PlanetSettings {
 	return PlanetSettings{
 		PlanetShape{
 			// General:
-			2.0, // radius
-			50,  // resolution
-			0.0, // amplitude
-			0.0, // frequency
+			10.0, // radius
+			50,   // resolution
+			0.0,  // amplitude
+			0.0,  // frequency
 
 			// Ocean:
 			1.0, // depth

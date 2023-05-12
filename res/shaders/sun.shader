@@ -7,6 +7,7 @@ layout (location = 1) in vec3 aNormal;
 out vec3 VertexPos;
 out vec3 vertexNormal;
 out vec3 Normal;
+out vec3 FragPos;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -15,7 +16,7 @@ uniform mat4 projection;
 void main() {
     VertexPos = aPos;
     vertexNormal = aNormal;
-    vec3 FragPos = vec3(model * vec4(aPos, 1.0));
+    FragPos = vec3(model * vec4(aPos, 1.0));
     Normal = mat3(transpose(inverse(model))) * aNormal; 
 
     gl_Position = projection * view * vec4(FragPos, 1.0);
@@ -27,12 +28,20 @@ void main() {
 in vec3 VertexPos;
 in vec3 vertexNormal;
 in vec3 Normal;
+in vec3 FragPos;
 
-out vec4 FragColor;
+layout(location = 0) out vec4 FragColor;
+layout(location = 1) out vec4 DepthColor;
+layout(location = 2) out vec4 sunBloom;
 
 // Textures
 uniform sampler2D mainTexture;
 uniform float texScale;
+
+uniform vec3 camPos;
+
+uniform float camFar;
+uniform float camNear;
 
 // Maps a texture to six sides of the model
 vec3 triplanarTexture(vec3 pos, sampler2D tex) {
@@ -59,4 +68,6 @@ void main() {
     vec3 texColor = triplanarTexture(VertexPos, mainTexture);
 
     FragColor = vec4(texColor, 1.0);
+    DepthColor.r = length(FragPos - camPos) / (camFar - camNear);
+    sunBloom = vec4(1.0);
 }
